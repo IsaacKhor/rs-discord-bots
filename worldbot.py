@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import time
 
 # Bot state
@@ -158,4 +160,8 @@ async def command_del_world(ctx, num:int):
 async def command_debug(ctx):
     await ctx.send(worlds_state)
 
-bot.run('NzM1MTI4NDU3NDY5NjI0Mzky.Xxbv_Q.WoiZH-Xg2Xo-mFlW65TzzoqHCwI')
+import sys
+if len(sys.argv) < 2:
+    print("Usage: ./worldbot.py <token>")
+
+bot.run(sys.argv[1])
