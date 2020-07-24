@@ -27,9 +27,9 @@ Worldbot instructions:
 
 [b]Commands[/b]:
 - [b]list[/b] - lists summary of current status
-- [b]help[/b] - show this help message
-- [b]reset[/b] - reset bot for next wave
-- [b]debug[/b] - show debug information
+- [b].help[/b] - show this help message
+- [b].reset[/b] - reset bot for next wave
+- [b].debug[/b] - show debug information
 
 [b]Scouting commands[/b] - The bot accepts any commands starting with a number
 followed by any of the following (spaces are optional for each command):
@@ -43,7 +43,7 @@ followed by any of the following (spaces are optional for each command):
 - [b]'dies :07'[/b] marks the world as dying at :07
 - [b]'xx:xx gc'[/b] for 'xx:xx' remaining on the game clock. The seconds part is optional
 - [b]'xx:xx mins'[/b] for xx:xx remaining in real time. The seconds part is optional
-- [b]'xx:xx' if 'gc' or 'mins' is not specified its assumed to be gameclock
+- [b]'xx:xx'[/b] if 'gc' or 'mins' is not specified its assumed to be gameclock
 
 So for example:
 - '119dwf 10gc' marks world as dying in 10\\*0.6=6 minutes
