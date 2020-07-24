@@ -25,27 +25,25 @@ TSPASS = sys.argv[1]
 help_string = """
 Worldbot instructions:
 
-**Commands**:
-- **list** - lists summary of current status
-- **help** - show this help message
-- **reset** - reset bot for next wave
-- **debug** - show debug information
-- ~~**remove <world>** - reset information for specified world~~ NOT IMPLEMENTED
-  use '119unk' instead (for 119 unknown)
+[b]Commands[/b]:
+- [b]list[/b] - lists summary of current status
+- [b]help[/b] - show this help message
+- [b]reset[/b] - reset bot for next wave
+- [b]debug[/b] - show debug information
 
-**Scouting commands** - The bot accepts any commands starting with a number
+[b]Scouting commands[/b] - The bot accepts any commands starting with a number
 followed by any of the following (spaces are optional for each command):
-- **'dwf|elm|rdi|unk'** will update the world to that location, 'unk' is unknown
-- **'dead'** will mark the world as dead
-- **'unsafe'** will mark the world as unsafe
-- **'beaming'** will mark the world as being actively beamed
+- [b]'dwf|elm|rdi|unk'[/b] will update the world to that location, 'unk' is unknown
+- [b]'dead'[/b] will mark the world as dead
+- [b]'unsafe'[/b] will mark the world as unsafe
+- [b]'beaming'[/b] will mark the world as being actively beamed
 - Any combination of 3 of 'hcmfs' to add the world's tents
-- **'beamed :02'** to mark world as beamed at 2 minutes past the hour.
-- **'beamed'** with no number provided bot uses current time
-- **'dies :07'** marks the world as dying at :07
-- **'xx:xx gc'** for 'xx:xx' remaining on the game clock. The seconds part is optional
-- **'xx:xx mins'** for xx:xx remaining in real time. The seconds part is optional
-- **'xx:xx' if 'gc' or 'mins' is not specified its assumed to be gameclock
+- [b]'beamed :02'[/b] to mark world as beamed at 2 minutes past the hour.
+- [b]'beamed'[/b] with no number provided bot uses current time
+- [b]'dies :07'[/b] marks the world as dying at :07
+- [b]'xx:xx gc'[/b] for 'xx:xx' remaining on the game clock. The seconds part is optional
+- [b]'xx:xx mins'[/b] for xx:xx remaining in real time. The seconds part is optional
+- [b]'xx:xx' if 'gc' or 'mins' is not specified its assumed to be gameclock
 
 So for example:
 - '119dwf 10gc' marks world as dying in 10\\*0.6=6 minutes

@@ -166,8 +166,6 @@ class WorldBot:
     # Summary output
     def get_current_status(self, bbcode=True):
         bbcode_format = """
-[b]Uncalled[/b]: {}
-
 [b]Active[/b] (unknown, [i]beaming[/i], [u]>5 mins[/u], [color=red]<5mins[/color]:
 [b]DWF[/b]: {}
 [b]ELM[/b]: {}
@@ -185,9 +183,7 @@ class WorldBot:
             return joinchar.join([w.get_formatted_number() for w in worlds 
                 if w.loc == loc and w.state != WorldState.DEAD])
 
-        uncalled_str = ','.join([str(w.num) for w in worlds if w.state == WorldState.UNCALLED])
         dead_str = ','.join([str(w.num) for w in worlds if w.state == WorldState.DEAD])
-
         active_dwfs = get_active_for_loc(Location.DWF, ',')
         active_elms = get_active_for_loc(Location.ELM, ',')
         active_rdis = get_active_for_loc(Location.RDI, ',')
@@ -197,7 +193,7 @@ class WorldBot:
         all_active = sorted(all_active, key=lambda w: w.time, reverse=True)
         all_active_str = '\n'.join(map(lambda w: w.get_summary(), all_active))
 
-        return bbcode_format.format(uncalled_str, active_dwfs, active_elms,
+        return bbcode_format.format(active_dwfs, active_elms,
             active_rdis, active_unks, dead_str, all_active_str)
 
     def get_debug_info(self):
