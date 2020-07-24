@@ -1,0 +1,9 @@
+2020-07-24 18:38:38,830 - ts3.TS3Connection - ERROR - Connection closed
+Traceback (most recent call last):
+  File "/Users/isaackhor/code/discord-worldbot/ts3/TS3Connection.py", line 175, in _recv
+    resp = self._conn.read_until(b"\n\r")[:-2]
+  File "/usr/local/Cellar/python/3.7.7/Frameworks/Python.framework/Versions/3.7/lib/python3.7/telnetlib.py", line 327, in read_until
+    return self.read_very_lazy()
+  File "/usr/local/Cellar/python/3.7.7/Frameworks/Python.framework/Versions/3.7/lib/python3.7/telnetlib.py", line 403, in read_very_lazy
+    raise EOFError('telnet connection closed')
+EOFError: telnet connection closed

@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import time, sys, string, re, datetime, functools
 from enum import Enum, auto
 
@@ -109,14 +107,14 @@ class World():
 
     def get_formatted_number(self):
         if self.state == WorldState.BEAMING:
-            return f'*{self.num}*'
+            return f'[i]{self.num}[/i]'
 
         t = self.get_remaining_time()
         if t == -1:
             return str(self.num)
         if t.mins >= 5:
-            return '__{}__.'.format(self.num)
-        return '~~{}~~'.format(self.num)
+            return '[u]{}[/u]'.format(self.num)
+        return '[color=red]{}[/color]'.format(self.num)
 
     def update_state(self, curtime):
         if not self.time:
@@ -124,74 +122,89 @@ class World():
         if self.state == WorldState.ALIVE and curtime >= self.time:
             self.state = WorldState.DEAD
 
-p2p_worlds = [1,2,4,5,6,9,10,12,14,15,16,21,22,23]
-worlds_registry = dict()
 
-def get_world(num):
-    if num not in p2p_worlds:
-        raise ValueError('{} world is not valid'.format(num))
-    return worlds_registry[num]
+P2P_WORLDS = [1,2,4,5,6,9,10,12,14,15,16,21,22,23]
 
-def reset_worlds():
-    global worlds_registry
-    worlds_registry = dict()
-    for num in p2p_worlds:
-        worlds_registry[num] = World(num)
+class WorldBot:
+    def __init__(self, helpstr='TODO: helpstring'):
+        self._registry = None
+        self._helpstr = helpstr
+        self.reset_worlds()
 
-    return worlds_registry
+    def get_world(self, num):
+        if num not in P2P_WORLDS:
+            raise ValueError('{} world is not valid'.format(num))
+        return self._registry[num]
 
-def update_world(num, loc, state, tents, time, notes, is_safe, is_scouted):
-    world = get_world(num)
-    if loc:
-        world.loc = loc
-    if state:
-        world.state = state
-    if tents:
-        world.tents = tents
-    if time:
-        world.time = time
-    if notes:
-        world.notes = notes
-    if is_safe:
-        world.is_safe = is_safe
-    if is_scouted:
-        world.is_scouted = is_scouted
+    def get_worlds(self):
+        return self._registry.values()
 
-# Summary output
-output_format = """
-**Uncalled**: {}
+    def reset_worlds(self):
+        self._registry = dict()
+        for num in P2P_WORLDS:
+            self._registry[num] = World(num)
 
-**Active** (unknown, *beaming*, __>5 mins__, ~~<5mins~~:
-**DWF**: {}
-**ELM**: {}
-**RDI**: {}
-**UNK**: {}
+        return self._registry
 
-**Dead**: {}
+    def update_world(self, num, loc, state, tents, time, notes, is_safe, is_scouted):
+        world = self.get_world(num)
+        if loc:
+            world.loc = loc
+        if state:
+            world.state = state
+        if tents:
+            world.tents = tents
+        if time:
+            world.time = time
+        if notes:
+            world.notes = notes
+        if is_safe:
+            world.is_safe = is_safe
+        if is_scouted:
+            world.is_scouted = is_scouted
 
-**Summary of active worlds (world / location / tents / time remaining / remarks**
+    # Summary output
+    def get_current_status(self, bbcode=True):
+        bbcode_format = """
+[b]Uncalled[/b]: {}
+
+[b]Active[/b] (unknown, [i]beaming[/i], [u]>5 mins[/u], [color=red]<5mins[/color]:
+[b]DWF[/b]: {}
+[b]ELM[/b]: {}
+[b]RDI[/b]: {}
+[b]UNK[/b]: {}
+
+[b]Dead[/b]: {}
+
+[b]Summary of active worlds (world / location / tents / time remaining / remarks[/b]
 {}
-"""
-def current_status():
-    worlds = worlds_registry.values()
+        """
+        worlds = self.get_worlds()
 
-    def get_active_for_loc(loc, joinchar):
-        return joinchar.join([w.get_formatted_number() for w in worlds if w.loc == loc])
+        def get_active_for_loc(loc, joinchar):
+            return joinchar.join([w.get_formatted_number() for w in worlds 
+                if w.loc == loc and w.state != WorldState.DEAD])
 
-    uncalled_str = ','.join([str(w.num) for w in worlds if w.state == WorldState.UNCALLED])
-    dead_str = ','.join([str(w.num) for w in worlds if w.state == WorldState.DEAD])
+        uncalled_str = ','.join([str(w.num) for w in worlds if w.state == WorldState.UNCALLED])
+        dead_str = ','.join([str(w.num) for w in worlds if w.state == WorldState.DEAD])
 
-    active_dwfs = get_active_for_loc(Location.DWF, ',')
-    active_elms = get_active_for_loc(Location.ELM, ',')
-    active_rdis = get_active_for_loc(Location.RDI, ',')
-    active_unks = get_active_for_loc(Location.UNKNOWN, ',')
+        active_dwfs = get_active_for_loc(Location.DWF, ',')
+        active_elms = get_active_for_loc(Location.ELM, ',')
+        active_rdis = get_active_for_loc(Location.RDI, ',')
+        active_unks = get_active_for_loc(Location.UNKNOWN, ',')
 
-    all_active = [w for w in worlds if w.state == WorldState.ALIVE]
-    all_active = sorted(all_active, key=lambda w: w.time, reverse=True)
-    all_active_str = '\n'.join(map(lambda w: w.get_summary(), all_active))
+        all_active = [w for w in worlds if w.state == WorldState.ALIVE]
+        all_active = sorted(all_active, key=lambda w: w.time, reverse=True)
+        all_active_str = '\n'.join(map(lambda w: w.get_summary(), all_active))
 
-    return output_format.format(uncalled_str, active_dwfs, active_elms,
-        active_rdis, active_unks, dead_str, all_active_str)
+        return bbcode_format.format(uncalled_str, active_dwfs, active_elms,
+            active_rdis, active_unks, dead_str, all_active_str)
+
+    def get_debug_info(self):
+        return str(self._registry)
+
+    def get_help_info(self):
+        return self._helpstr
 
 # Commands supported:
 # - 119dwf hcf beamed :02 clear
@@ -209,31 +222,9 @@ def current_status():
 # - Everything else goes into "notes"
 # - The finite state automaton almost writes itself
 
-num_pat = re.compile(r'^(\d+)')
+NUM_PAT = re.compile(r'^(\d+)')
 
-def get_beg_number(s):
-    num, string = match_beginning(num_pat, s)
-    if num:
-        num = int(num)
-    return num, string
-
-def match_beginning(pat, s):
-    m = re.match(pat, s)
-    if not m:
-        return None, s
-    else:
-        return m.group(), s[m.span()[1]:].lstrip(' :')
-
-def convert_location(tok):
-    if tok == 'rdi':
-        return Location.RDI
-    if tok == 'elm':
-        return Location.ELM
-    if tok == 'dwf':
-        return Location.DWF
-    return Location.UNKNOWN
-
-def parse_command(s):
+def parse_update_command(s, botstate):
     def is_location(tok):
         return tok in ['dwf', 'elm', 'rdi', 'unk']
 
@@ -245,10 +236,32 @@ def parse_command(s):
             return tok[len(item):].lstrip(' :')
         return tok
 
+    def get_beg_number(s):
+        num, string = match_beginning(NUM_PAT, s)
+        if num:
+            num = int(num)
+        return num, string
+
+    def match_beginning(pat, s):
+        m = re.match(pat, s)
+        if not m:
+            return None, s
+        else:
+            return m.group(), s[m.span()[1]:].lstrip(' :')
+
+    def convert_location(tok):
+        if tok == 'rdi':
+            return Location.RDI
+        if tok == 'elm':
+            return Location.ELM
+        if tok == 'dwf':
+            return Location.DWF
+        return Location.UNKNOWN
+
     s = s.strip().lower()
 
     # Try to match number at beginning of string
-    m = re.match(num_pat, s)
+    m = re.match(NUM_PAT, s)
     if not m:
         return
     world_num = int(m.group())
@@ -343,89 +356,7 @@ def parse_command(s):
             notes = cmd
             cmd = ''
 
-    print('[LOG]: updating {}/{}/{}/{}/{}/{}/{}/{}'.format(
-        world_num, loc, state, tents, time, notes, is_safe, is_scouted))
-    update_world(world_num, loc, state, tents, time, notes, is_safe, is_scouted)
-
-# Testing script
-reset_worlds()
-# parse_command('22 dwf')
-# parse_command('22 hcf 9:20')
-# parse_command('4rdi beamed :03')
-# parse_command('6 dead')
-
-help_string = """
-Worldbot instructions:
-
-**Commands**:
-- **list** - lists summary of current status
-- **help** - show this help message
-- **reset** - reset bot for next wave
-- **debug** - show debug information
-- ~~**remove <world>** - reset information for specified world~~ NOT IMPLEMENTED
-  use '119unk' instead (for 119 unknown)
-
-**Scouting commands** - The bot accepts any commands starting with a number
-followed by any of the following (spaces are optional for each command):
-- **'dwf|elm|rdi|unk'** will update the world to that location, 'unk' is unknown
-- **'dead'** will mark the world as dead
-- **'unsafe'** will mark the world as unsafe
-- **'beaming'** will mark the world as being actively beamed
-- Any combination of 3 of 'hcmfs' to add the world's tents
-- **'beamed :02'** to mark world as beamed at 2 minutes past the hour.
-- **'beamed'** with no number provided bot uses current time
-- **'dies :07'** marks the world as dying at :07
-- **'xx:xx gc'** for 'xx:xx' remaining on the game clock. The seconds part is optional
-- **'xx:xx mins'** for xx:xx remaining in real time. The seconds part is optional
-- **'xx:xx' if 'gc' or 'mins' is not specified its assumed to be gameclock
-
-So for example:
-- '119dwf 10gc' marks world as dying in 10\\*0.6=6 minutes
-- '119 mhs 4mins' marks the world as dying in 4 minutes
-- '28 dead'
-- '84 beamed02 hcf clear', you can combine multiple commands
-"""
-
-import discord
-
-client = discord.Client()
-
-@client.event
-async def on_ready():
-    print('Logged is as {}'.format(client.user))
-
-@client.event
-async def on_command_error(err):
-    print(type(err), err)
-
-@client.event
-async def on_message(message):
-    if message.author == client.user:
-        return
-
-    # Commands:
-    # - 'list': list summary of state
-    # - 'help': show help
-    # - 'reset': reset bot state
-    # - 'debug': show debug info
-    # - others
-
-    cmd = message.content.strip()
-
-    if cmd == 'help':
-        await message.channel.send(help_string)
-    elif cmd == 'list':
-        await message.channel.send(current_status())
-    elif cmd == 'debug':
-        await message.channel.send(str(worlds_registry))
-    elif cmd == 'reset':
-        reset_worlds()
-        await message.channel.send('Worlds successfully reset')
-    else:
-        parse_command(cmd)
-
-import sys
-if len(sys.argv) < 2:
-    print("Usage: ./worldbot.py <token>")
-
-client.run(sys.argv[1])
+    # print('[LOG]: updating {}/{}/{}/{}/{}/{}/{}/{}'.format(
+    #     world_num, loc, state, tents, time, notes, is_safe, is_scouted))
+    botstate.update_world(world_num, loc, state, tents, time, notes, 
+        is_safe, is_scouted)
