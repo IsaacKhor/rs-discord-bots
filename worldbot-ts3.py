@@ -52,6 +52,29 @@ So for example:
 - '84 beamed02 hcf clear', you can combine multiple commands
 """
 
+bbcode_summary_fmt = """
+[b]Active[/b] (unknown, [i]beaming[/i], [u]>5 mins[/u], [color=red]<5mins[/color]):
+[b]DWF[/b]: {}
+[b]ELM[/b]: {}
+[b]RDI[/b]: {}
+[b]UNK[/b]: {}
+
+[b]Dead[/b]: {}
+
+[b]Summary of active worlds (world / location / tents / time remaining / remarks)[/b]
+{}
+"""
+
+def fmt_summary_num(world):
+    if world.state == WorldState.BEAMING:
+        return f'[i]{world.num}[/i]'
+    t = world.get_remaining_time()
+    if t == -1:
+        return str(world.num)
+    if t.mins >= 5:
+        return '[u]{}[/u]'.format(world.num)
+    return '[color=red]{}[/color]'.format(world.num)
+
 worldbot = WorldBot(helpstr=help_string)
 tsc = ts3.TS3Connection(HOST, PORT)
 tsc.login(TSUSER, TSPASS)
@@ -100,8 +123,12 @@ def on_textmsg(sender, **kw):
         if cmd == '.help':
             retmsg = worldbot.get_help_info()
         elif cmd == 'list':
-            retmsg = worldbot.get_current_status()
+            # TODO move this to a timer, but that'll require dealing
+            # with thread safety and all that fun stuff
+            worldbot.update_world_states()
+            retmsg = worldbot.get_current_status(bbcode_summary_fmt, fmt_summary_num)
         elif cmd == '.debug':
+            worldbot.update_world_states()
             retmsg = worldbot.get_debug_info()
         elif cmd == '.reset':
             worldbot.reset_worlds()

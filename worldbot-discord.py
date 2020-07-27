@@ -8,11 +8,9 @@ Worldbot instructions:
 
 **Commands**:
 - **list** - lists summary of current status
-- **help** - show this help message
-- **reset** - reset bot for next wave
-- **debug** - show debug information
-- ~~**remove <world>** - reset information for specified world~~ NOT IMPLEMENTED
-  use '119unk' instead (for 119 unknown)
+- **.help** - show this help message
+- **.reset** - reset bot for next wave
+- **.debug** - show debug information
 
 **Scouting commands** - The bot accepts any commands starting with a number
 followed by any of the following (spaces are optional for each command):
@@ -26,7 +24,7 @@ followed by any of the following (spaces are optional for each command):
 - **'dies :07'** marks the world as dying at :07
 - **'xx:xx gc'** for 'xx:xx' remaining on the game clock. The seconds part is optional
 - **'xx:xx mins'** for xx:xx remaining in real time. The seconds part is optional
-- **'xx:xx' if 'gc' or 'mins' is not specified its assumed to be gameclock
+- **'xx:xx'** if 'gc' or 'mins' is not specified its assumed to be gameclock
 
 So for example:
 - '119dwf 10gc' marks world as dying in 10\\*0.6=6 minutes
@@ -34,6 +32,29 @@ So for example:
 - '28 dead'
 - '84 beamed02 hcf clear', you can combine multiple commands
 """
+
+md_format_str = """
+**Active** (unknown, *beaming*, __5 mins__, ~~<5mins~~):
+**DWF**: {}
+**ELM**: {}
+**RDI**: {}
+**UNK**: {}
+
+**Dead**: {}
+
+**Summary (world/location/tents/time rem./remarks)**
+{}
+"""
+
+def fmt_summary_num(world):
+    if world.state == WorldState.BEAMING:
+        return f'*{world.num}*'
+    t = world.get_remaining_time()
+    if t == -1:
+        return str(world.num)
+    if t.mins >= 5:
+        return '__{}__'.format(world.num)
+    return '~~{}~~'.format(world.num)
 
 
 client = discord.Client()
@@ -52,6 +73,16 @@ async def on_message(message):
     if message.author == client.user:
         return
 
+    # Only respond to messages from:
+    # - DM
+    # - TextChannel 'worldbot' and 'bottest'
+    valid_channel_names = ['worldbot', 'bottest']
+    is_dm = type(message.channel) == discord.DMChannel
+    is_valid_textchannel = type(message.channel) == discord.TextChannel and message.channel.name in valid_channel_names
+
+    if not (is_dm or is_valid_textchannel):
+        return
+
     # Commands:
     # - 'list': list summary of state
     # - 'help': show help
@@ -60,18 +91,27 @@ async def on_message(message):
     # - others
 
     cmd = message.content.strip()
+    retmsg = None
+    try:
+        if cmd == '.help':
+            retmsg = help_string
+        elif cmd == 'list':
+            worldbot.update_world_states()
+            retmsg = worldbot.get_current_status(md_format_str, fmt_summary_num)
+        elif cmd == '.debug':
+            worldbot.update_world_states()
+            retmsg = worldbot.get_debug_info()
+        elif cmd == '.reset':
+            worldbot.reset_worlds()
+            retmsg = 'Worlds successfully reset'
+        else:
+            parse_update_command(cmd, worldbot)
+    except Exception as e:
+        retmsg = str(type(e)) + str(e)
 
-    if cmd == 'help':
-        await message.channel.send(help_string)
-    elif cmd == 'list':
-        await message.channel.send(worldbot.current_status())
-    elif cmd == 'debug':
-        await message.channel.send(str(worldbot.get_registry()))
-    elif cmd == 'reset':
-        reset_worlds()
-        await message.channel.send('Worlds successfully reset')
-    else:
-        parse_command(cmd)
+    if retmsg:
+        # Channel can be either worldbot channel or DM channel
+        await message.channel.send(retmsg)
 
 import sys
 if len(sys.argv) < 2:

@@ -105,16 +105,6 @@ class World():
             return 'unknown'
         return str(t)
 
-    def get_formatted_number(self):
-        if self.state == WorldState.BEAMING:
-            return f'[i]{self.num}[/i]'
-
-        t = self.get_remaining_time()
-        if t == -1:
-            return str(self.num)
-        if t.mins >= 5:
-            return '[u]{}[/u]'.format(self.num)
-        return '[color=red]{}[/color]'.format(self.num)
 
     def update_state(self, curtime):
         if not self.time:
@@ -171,23 +161,11 @@ class WorldBot:
             world.is_scouted = is_scouted
 
     # Summary output
-    def get_current_status(self, bbcode=True):
-        bbcode_format = """
-[b]Active[/b] (unknown, [i]beaming[/i], [u]>5 mins[/u], [color=red]<5mins[/color]:
-[b]DWF[/b]: {}
-[b]ELM[/b]: {}
-[b]RDI[/b]: {}
-[b]UNK[/b]: {}
-
-[b]Dead[/b]: {}
-
-[b]Summary of active worlds (world / location / tents / time remaining / remarks[/b]
-{}
-        """
+    def get_current_status(self, status_format_str, world_format_func):
         worlds = self.get_worlds()
 
         def get_active_for_loc(loc, joinchar):
-            return joinchar.join([w.get_formatted_number() for w in worlds 
+            return joinchar.join([world_format_func(w) for w in worlds 
                 if w.loc == loc and w.state != WorldState.DEAD])
 
         dead_str = ','.join([str(w.num) for w in worlds if w.state == WorldState.DEAD])
@@ -200,7 +178,7 @@ class WorldBot:
         all_active = sorted(all_active, key=lambda w: w.time, reverse=True)
         all_active_str = '\n'.join(map(lambda w: w.get_summary(), all_active))
 
-        return bbcode_format.format(active_dwfs, active_elms,
+        return status_format_str.format(active_dwfs, active_elms,
             active_rdis, active_unks, dead_str, all_active_str)
 
     def get_debug_info(self):
@@ -208,6 +186,11 @@ class WorldBot:
 
     def get_help_info(self):
         return self._helpstr
+
+    def update_world_states(self):
+        curtime = WbsTime.current()
+        for w in self.get_worlds():
+            w.update_state(curtime)
 
 # Commands supported:
 # - 119dwf hcf beamed :02 clear
