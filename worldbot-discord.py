@@ -3,6 +3,8 @@
 from botcore import *
 import discord
 
+CHANNELS = ['worldbot', 'bottest']
+
 help_string = """
 Worldbot instructions:
 
@@ -76,9 +78,8 @@ async def on_message(message):
     # Only respond to messages from:
     # - DM
     # - TextChannel 'worldbot' and 'bottest'
-    valid_channel_names = ['worldbot', 'bottest']
     is_dm = type(message.channel) == discord.DMChannel
-    is_valid_textchannel = type(message.channel) == discord.TextChannel and message.channel.name in valid_channel_names
+    is_valid_textchannel = type(message.channel) == discord.TextChannel and message.channel.name in CHANNELS
 
     if not (is_dm or is_valid_textchannel):
         return
