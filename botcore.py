@@ -92,7 +92,7 @@ class World():
         return self.__str__()
 
     def get_summary(self):
-        return f'{self.num} {self.loc} {self.tents} {self.get_remaining_time_str()} {self.notes}'
+        return '{} {} {} {} {}'.format(self.num, self.loc, self.tents, self.get_remaining_time_str(), self.notes)
 
     def get_remaining_time(self):
         if not self.time:
