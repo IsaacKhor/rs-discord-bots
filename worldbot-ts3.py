@@ -67,7 +67,7 @@ bbcode_summary_fmt = """
 
 def fmt_summary_num(world):
     if world.state == WorldState.BEAMING:
-        return f'[i]{world.num}[/i]'
+        return '[i]{}[/i]'.format(world.num)
     t = world.get_remaining_time()
     if t == -1:
         return str(world.num)

@@ -50,7 +50,7 @@ md_format_str = """
 
 def fmt_summary_num(world):
     if world.state == WorldState.BEAMING:
-        return f'*{world.num}*'
+        return '*{}*'.format(world.num)
     t = world.get_remaining_time()
     if t == -1:
         return str(world.num)
