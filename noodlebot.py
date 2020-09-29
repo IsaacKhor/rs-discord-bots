@@ -7,7 +7,7 @@ import random
 import math
 import re
 
-CHANNELS = ['scout-channel']
+CHANNELS = ['scout-channel', 'crashing-of-the-bands']
 
 HELP_STRING = """
 Noodlebot help:
