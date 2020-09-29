@@ -98,7 +98,7 @@ async def on_command_error(ctx, err):
 @client.command(name='w', help='marks given worlds as alive')
 async def mark_alive(ctx, *, worlds):
     toks = re.split('\n| |,|;', worlds)
-    wl = [int(x) for x in toks]
+    wl = [int(x) for x in toks if x.isnumeric()]
     invalid_worlds = [x for x in wl if x not in P2P_WORLDS]
 
     if len(invalid_worlds) > 0:
