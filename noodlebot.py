@@ -184,6 +184,11 @@ async def split_world_list(ctx, chunks:int):
     await ctx.send(msg)
 
 
+@client.command(name='pet', help='pet the noodle')
+async def pet(ctx):
+    await ctx.send('*pets noodle*')
+
+
 @client.check
 async def check_channel(ctx):
     is_dm = type(ctx.channel) == discord.DMChannel
