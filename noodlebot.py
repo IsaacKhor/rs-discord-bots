@@ -72,6 +72,12 @@ class NoodleBot(object):
     def worlds_remaining(self):
         return len(self._worlds)
 
+    def get_abbrev_state(self):
+        worlds = [str(x) for x in sorted(self._worlds)]
+        if len(worlds) == 0:
+            return 'No worlds available :('
+        return f'{len(worlds)} worlds available. Current: {self._active_world}\n' + ', '.join(worlds)
+
     def __str__(self):
         return f'Worlds: {self._worlds}\nActive: {self._active_world}\nHistory: {self._history}'
 
@@ -106,13 +112,15 @@ async def mark_alive(ctx, *, worlds):
         return
 
     noodlebot.set_active(*wl)
-    await ctx.send(f'Successfully added {wl}')
+    await ctx.send(f'Successfully added {wl}\n' + noodlebot.get_abbrev_state())
 
 
 @client.command(name='rm', help='marks given worlds as dead')
-async def mark_dead(ctx, *worlds):
-    wl = [int(x) for x in worlds]
+async def mark_dead(ctx, *, worlds):
+    toks = re.split('\n| |,|;', worlds)
+    wl = [int(x) for x in toks if x.isnumeric()]
     noodlebot.set_dead(*wl)
+    await ctx.send(f'Successfully removed {wl} from list\n' + noodlebot.get_abbrev_state())
 
 
 @client.command(name='clear', help='reset bot state')
@@ -128,12 +136,7 @@ async def get_state(ctx):
 
 @client.command(name='list', help='list active worlds')
 async def list_active_worlds(ctx):
-    worlds = [str(x) for x in sorted(noodlebot.get_active())]
-
-    if len(worlds) == 0:
-        await ctx.send('No worlds available :(')
-    else:
-        await ctx.send(f'{len(worlds)} worlds available:\n' + ', '.join(worlds))
+    await ctx.send(noodlebot.get_abbrev_state())
 
 
 @client.command(name='rollnew', help='mark old active world as dead and roll a new one')
@@ -148,7 +151,7 @@ async def mark_and_roll(ctx):
         return
 
     noodlebot.set_current(new_world)
-    await ctx.send(f'Next world: {new_world}. Marked {old_world} as dead')
+    await ctx.send(f'Next world: {new_world}. Marked {old_world} as dead' + noodlebot.get_abbrev_state())
 
 
 @client.command(name='reroll', help='set active world to new random')
@@ -159,7 +162,7 @@ async def roll_new_world(ctx):
     if new_world == -1:
         await ctx.send('No more worlds :(')
     else:
-        await ctx.send(f'Next world: {new_world}')
+        await ctx.send(f'Next world: {new_world}' + noodlebot.get_abbrev_state())
 
 
 @client.command(name='cur', help='get current active world')
