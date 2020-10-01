@@ -101,6 +101,7 @@ async def on_ready():
 
 @client.event
 async def on_command_error(ctx, err):
+    print(f'{type(err)}, {str(err)}')
     if isinstance(err, InvalidChannelErr):
         await ctx.send('Invalid channel for bot commands')
     await ctx.send(f'{type(err)}\n {str(err)}')
