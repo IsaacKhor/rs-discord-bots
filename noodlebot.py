@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import discord
-import discord.ext.commands
+import discord.ext.commands as commands
 import aiohttp
 import random
 import math
@@ -33,8 +33,22 @@ P2P_WORLDS = [
 100,102,103,104,105,106,114,115,116,117,118,119,
 121,123,124,134,137,138,139,140]
 
-class InvalidChannelErr(discord.ext.commands.CommandError):
+class InvalidChannelErr(commands.CommandError):
     pass
+
+
+def is_restricted_channel(ctx):
+    is_dm = type(ctx.channel) == discord.DMChannel
+    is_valid_textchannel = type(ctx.channel) == discord.TextChannel and ctx.channel.name in CHANNELS
+    return is_dm or is_valid_textchannel
+
+
+async def restricted_channel_check(ctx):
+    if is_restricted_channel(ctx):
+        return True
+    else:
+        raise InvalidChannelErr()
+
 
 class NoodleBot(object):
     def __init__(self):
@@ -60,11 +74,15 @@ class NoodleBot(object):
         return list(self._worlds)
 
     def set_active(self, *worlds):
+        new_worlds = set(worlds).difference(self._worlds)
         self._worlds.update(worlds)
+        return new_worlds
 
     def set_dead(self, *worlds):
+        removed_worlds = self._worlds.intersection(set(worlds))
         for w in worlds:
             self._worlds.discard(w)
+        return removed_worlds
 
     def get_history(self):
         return self._history
@@ -86,7 +104,7 @@ class NoodleBot(object):
 
 
 conn = aiohttp.TCPConnector(ssl=False)
-client = discord.ext.commands.Bot(
+client = commands.Bot(
     command_prefix = ['.', '/'],
     case_insensitive = True,
     self_bot = False,
@@ -101,51 +119,70 @@ async def on_ready():
 
 @client.event
 async def on_command_error(ctx, err):
-    print(f'{type(err)}, {str(err)}')
     if isinstance(err, InvalidChannelErr):
-        await ctx.send('Invalid channel for bot commands')
-    await ctx.send(f'{type(err)}\n {str(err)}')
+        await ctx.send("ERROR: this command cannot be used in this channel")
+    else:
+        await ctx.send(f'{type(err)}\n {str(err)}')
 
 
-@client.command(name='w', help='marks given worlds as alive')
+@client.command(
+    name='w',
+    aliases=['alive', 'world', 'add'],
+    help='marks given worlds as alive')
 async def mark_alive(ctx, *, worlds):
     toks = re.split('\n| |,|;', worlds)
     wl = [int(x) for x in toks if x.isnumeric()]
     invalid_worlds = [x for x in wl if x not in P2P_WORLDS]
 
     if len(invalid_worlds) > 0:
-        await ctx.send(f'These worlds are not valid: {invalid_worlds}. Action aborted.')
+        await ctx.send(f'These worlds are not valid: {invalid_worlds}. Action aborted and no worlds added.')
         return
 
-    noodlebot.set_active(*wl)
-    await ctx.send(f'Successfully added {wl}\n' + noodlebot.get_abbrev_state())
+    added = noodlebot.set_active(*wl)
+    msg = f'Successfully added {added}'
+    if is_restricted_channel(ctx):
+        msg += '\n' + noodlebot.get_abbrev_state()
+
+    await ctx.send(msg)
 
 
-@client.command(name='rm', help='marks given worlds as dead')
+@client.command(
+    name='rm',
+    aliases=['dead', 'remove'],
+    help='marks given worlds as dead')
 async def mark_dead(ctx, *, worlds):
     toks = re.split('\n| |,|;', worlds)
     wl = [int(x) for x in toks if x.isnumeric()]
-    noodlebot.set_dead(*wl)
-    await ctx.send(f'Successfully removed {wl} from list\n' + noodlebot.get_abbrev_state())
+    removed = noodlebot.set_dead(*wl)
+
+    msg = f'Successfully removed {removed} from list'
+    if is_restricted_channel(ctx):
+        msg += '\n' + noodlebot.get_abbrev_state()
+
+    await ctx.send(msg)
 
 
-@client.command(name='clear', help='reset bot state')
+@client.command(name='clear', help='reset bot state (restricted)')
+@commands.check(restricted_channel_check)
 async def clear_all_worlds(ctx, *worlds):
     noodlebot.reset()
     await ctx.send('Bot state successfully reset')
 
 
-@client.command(name='debug', help='list debug info')
+@client.command(name='debug', help='list debug info (restricted)')
+@commands.check(restricted_channel_check)
 async def get_state(ctx):
     await ctx.send(str(noodlebot))
 
 
-@client.command(name='list', help='list active worlds')
+@client.command(name='list', help='list active worlds (restricted)')
+@commands.check(restricted_channel_check)
 async def list_active_worlds(ctx):
     await ctx.send(noodlebot.get_abbrev_state())
 
 
-@client.command(name='rollnew', help='mark old active world as dead and roll a new one')
+@client.command(name='rollnew', help='mark old active world as dead and roll a new one (restricted)')
+@commands.check(restricted_channel_check)
 async def mark_and_roll(ctx):
     old_world = noodlebot.get_current()
     noodlebot.set_dead(old_world)
@@ -160,7 +197,8 @@ async def mark_and_roll(ctx):
     await ctx.send(f'Next world: {new_world}. Marked {old_world} as dead\n' + noodlebot.get_abbrev_state())
 
 
-@client.command(name='reroll', help='set active world to new random')
+@client.command(name='reroll', help='set active world to new random (restricted)')
+@commands.check(restricted_channel_check)
 async def roll_new_world(ctx):
     new_world = noodlebot.get_random_active()
     noodlebot.set_current(new_world)
@@ -171,15 +209,17 @@ async def roll_new_world(ctx):
         await ctx.send(f'Next world: {new_world}\n' + noodlebot.get_abbrev_state())
 
 
-@client.command(name='cur', help='get current active world')
+@client.command(
+    name='cur',
+    aliases=['current'],
+    help='get current active world and number of worlds remaining')
 async def get_current_world(ctx):
-    await ctx.send(noodlebot.get_current())
+    await ctx.send(f'Current world: {noodlebot.get_current()}. {noodlebot.worlds_remaining()} worlds remaining.')
 
 
 @client.command(name='split', help='split world list for scouts')
 async def split_world_list(ctx, chunks:int):
     msg = f'Splitting worldlist into {chunks} chunks\n'
-
     size = math.ceil(len(P2P_WORLDS)/chunks)
 
     j = 0
@@ -193,15 +233,6 @@ async def split_world_list(ctx, chunks:int):
 @client.command(name='pet', help='pet the noodle')
 async def pet(ctx):
     await ctx.send('*pets noodle*')
-
-
-@client.check
-async def check_channel(ctx):
-    is_dm = type(ctx.channel) == discord.DMChannel
-    is_valid_textchannel = type(ctx.channel) == discord.TextChannel and ctx.channel.name in CHANNELS
-    if not (is_dm or is_valid_textchannel):
-        raise InvalidChannelErr("Invalid channel")
-    return True
 
 
 import sys
