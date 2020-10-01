@@ -201,6 +201,7 @@ async def check_channel(ctx):
     is_valid_textchannel = type(ctx.channel) == discord.TextChannel and ctx.channel.name in CHANNELS
     if not (is_dm or is_valid_textchannel):
         raise InvalidChannelErr("Invalid channel")
+    return True
 
 
 import sys
