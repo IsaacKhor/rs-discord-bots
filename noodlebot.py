@@ -121,6 +121,8 @@ async def on_ready():
 async def on_command_error(ctx, err):
     if isinstance(err, InvalidChannelErr):
         await ctx.send("ERROR: this command cannot be used in this channel")
+    elif isinstance(err, commands.errors.CommandNotFound):
+        return
     else:
         await ctx.send(f'{type(err)}\n {str(err)}')
 
@@ -162,26 +164,26 @@ async def mark_dead(ctx, *, worlds):
     await ctx.send(msg)
 
 
-@client.command(name='clear', help='reset bot state (restricted)')
+@client.command(name='clear', help='reset bot state')
 @commands.check(restricted_channel_check)
 async def clear_all_worlds(ctx, *worlds):
     noodlebot.reset()
     await ctx.send('Bot state successfully reset')
 
 
-@client.command(name='debug', help='list debug info (restricted)')
+@client.command(name='debug', help='list debug info')
 @commands.check(restricted_channel_check)
 async def get_state(ctx):
     await ctx.send(str(noodlebot))
 
 
-@client.command(name='list', help='list active worlds (restricted)')
+@client.command(name='list', help='list active worlds')
 @commands.check(restricted_channel_check)
 async def list_active_worlds(ctx):
     await ctx.send(noodlebot.get_abbrev_state())
 
 
-@client.command(name='rollnew', help='mark old active world as dead and roll a new one (restricted)')
+@client.command(name='rollnew', help='mark old active world as dead and roll a new one')
 @commands.check(restricted_channel_check)
 async def mark_and_roll(ctx):
     old_world = noodlebot.get_current()
@@ -197,7 +199,7 @@ async def mark_and_roll(ctx):
     await ctx.send(f'Next world: {new_world}. Marked {old_world} as dead\n' + noodlebot.get_abbrev_state())
 
 
-@client.command(name='reroll', help='set active world to new random (restricted)')
+@client.command(name='reroll', help='set active world to new random')
 @commands.check(restricted_channel_check)
 async def roll_new_world(ctx):
     new_world = noodlebot.get_random_active()
