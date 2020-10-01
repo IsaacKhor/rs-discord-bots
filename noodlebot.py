@@ -157,7 +157,7 @@ async def mark_and_roll(ctx):
         return
 
     noodlebot.set_current(new_world)
-    await ctx.send(f'Next world: {new_world}. Marked {old_world} as dead' + noodlebot.get_abbrev_state())
+    await ctx.send(f'Next world: {new_world}. Marked {old_world} as dead\n' + noodlebot.get_abbrev_state())
 
 
 @client.command(name='reroll', help='set active world to new random')
@@ -168,7 +168,7 @@ async def roll_new_world(ctx):
     if new_world == -1:
         await ctx.send('No more worlds :(')
     else:
-        await ctx.send(f'Next world: {new_world}' + noodlebot.get_abbrev_state())
+        await ctx.send(f'Next world: {new_world}\n' + noodlebot.get_abbrev_state())
 
 
 @client.command(name='cur', help='get current active world')
