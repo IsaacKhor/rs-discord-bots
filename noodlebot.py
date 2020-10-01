@@ -110,6 +110,7 @@ client = commands.Bot(
     self_bot = False,
     connector = conn)
 noodlebot = NoodleBot()
+msglog = open('messages.log', 'a')
 
 
 @client.event
@@ -125,6 +126,14 @@ async def on_command_error(ctx, err):
         return
     else:
         await ctx.send(f'{type(err)}\n {str(err)}')
+
+
+CHANNEL_BLACKLIST = ['botspam']
+@client.event
+async def on_message(msg):
+    if msg.channel.name in CHANNEL_BLACKLIST:
+        return
+    msglog.write(f'{msg.channel.name}, {msg.author.display_name}: {msg.content}')
 
 
 @client.command(
