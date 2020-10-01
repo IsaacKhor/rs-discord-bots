@@ -27,11 +27,14 @@ Noodlebot help:
 P2P_WORLDS = [
 1,2,4,5,6,9,10,12,14,15,16,
 21,22,23,24,25,26,27,28,30,31,32,35,36,37,39,
-40,42,44,45,46,47,48,49,50,51,52,53,54,58,59,
+40,42,44,45,46,47,48,49,50,51,52,53,54,56,58,59,
 60,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,
 82,83,84,85,86,87,88,89,91,92,96,97,98,99,
 100,102,103,104,105,106,114,115,116,117,118,119,
 121,123,124,134,137,138,139,140]
+
+class InvalidChannelErr(discord.ext.commands.CommandError):
+    pass
 
 class NoodleBot(object):
     def __init__(self):
@@ -98,6 +101,8 @@ async def on_ready():
 
 @client.event
 async def on_command_error(ctx, err):
+    if isinstance(err, InvalidChannelErr):
+        await ctx.send('Invalid channel for bot commands')
     await ctx.send(f'{type(err)}\n {str(err)}')
 
 
@@ -193,7 +198,8 @@ async def pet(ctx):
 async def check_channel(ctx):
     is_dm = type(ctx.channel) == discord.DMChannel
     is_valid_textchannel = type(ctx.channel) == discord.TextChannel and ctx.channel.name in CHANNELS
-    return is_dm or is_valid_textchannel
+    if not (is_dm or is_valid_textchannel):
+        raise InvalidChannelErr("Invalid channel")
 
 
 import sys
