@@ -39,7 +39,7 @@ class InvalidChannelErr(commands.CommandError):
 
 
 def is_restricted_channel(ctx):
-    return ctx.channel.name in PRIV_CHANNEL
+    return type(ctx.channel) == discord.TextChannel and ctx.channel.name in PRIV_CHANNEL
 
 
 async def restricted_channel_check(ctx):
