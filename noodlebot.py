@@ -7,7 +7,8 @@ import random
 import math
 import re
 
-CHANNELS = ['scout-channel', 'crashing-of-the-bands']
+PRIV_CHANNEL = ['scout-channel', 'crashing-of-the-bands']
+CHANNELS = PRIV_CHANNEL + ['botspam']
 
 HELP_STRING = """
 Noodlebot help:
@@ -38,9 +39,7 @@ class InvalidChannelErr(commands.CommandError):
 
 
 def is_restricted_channel(ctx):
-    is_dm = type(ctx.channel) == discord.DMChannel
-    is_valid_textchannel = type(ctx.channel) == discord.TextChannel and ctx.channel.name in CHANNELS
-    return is_dm or is_valid_textchannel
+    return ctx.channel.name in PRIV_CHANNEL
 
 
 async def restricted_channel_check(ctx):
@@ -236,6 +235,13 @@ async def split_world_list(ctx, chunks:int):
 @client.command(name='pet', help='pet the noodle')
 async def pet(ctx):
     await ctx.send('*pets noodle*')
+
+
+@client.check
+async def valid_channels(ctx):
+    is_dm = type(ctx.channel) == discord.DMChannel
+    is_valid_textchannel = type(ctx.channel) == discord.TextChannel and ctx.channel.name in CHANNELS
+    return is_dm or is_valid_textchannel
 
 
 import sys
