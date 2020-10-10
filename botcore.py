@@ -85,7 +85,7 @@ class World():
 
     def __str__(self):
         return '{} {} {} {} {} {} {} {}'.format(
-            self.num, self.loc, self.state, self.tents, 
+            self.num, self.loc, self.state, self.tents,
             self.time, self.notes, self.is_safe, self.is_scouted)
 
     def __repr__(self):
@@ -116,7 +116,7 @@ class World():
 P2P_WORLDS = [
 1,2,4,5,6,9,10,12,14,15,16,
 21,22,23,24,25,26,27,28,30,31,32,35,36,37,39,
-40,42,44,45,46,47,48,49,50,51,52,53,54,58,59,
+40,42,44,45,46,47,48,49,50,51,52,53,54,56,58,59,
 60,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,
 82,83,84,85,86,87,88,89,91,92,96,97,98,99,
 100,102,103,104,105,106,114,115,116,117,118,119,
@@ -165,7 +165,7 @@ class WorldBot:
         worlds = self.get_worlds()
 
         def get_active_for_loc(loc, joinchar):
-            return joinchar.join([world_format_func(w) for w in worlds 
+            return joinchar.join([world_format_func(w) for w in worlds
                 if w.loc == loc and w.state != WorldState.DEAD])
 
         dead_str = ','.join([str(w.num) for w in worlds if w.state == WorldState.DEAD])
@@ -203,7 +203,7 @@ class WorldBot:
 #   - marks words as dead
 # Notes:
 # - MUST begin with numbers, followed by optional space
-# - In any order and amount: location, tents, "beamed :xx", "dies :xx", 
+# - In any order and amount: location, tents, "beamed :xx", "dies :xx",
 #   "xx:xx gc", "dead", "unsafe", "safe", "beaming"
 # - Everything else goes into "notes"
 # - The finite state automaton almost writes itself
@@ -344,5 +344,5 @@ def parse_update_command(s, botstate):
 
     # print('[LOG]: updating {}/{}/{}/{}/{}/{}/{}/{}'.format(
     #     world_num, loc, state, tents, time, notes, is_safe, is_scouted))
-    botstate.update_world(world_num, loc, state, tents, time, notes, 
+    botstate.update_world(world_num, loc, state, tents, time, notes,
         is_safe, is_scouted)

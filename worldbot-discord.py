@@ -2,6 +2,7 @@
 
 from botcore import *
 import discord
+import aiohttp
 
 CHANNELS = ['worldbot', 'bottest']
 
@@ -59,7 +60,8 @@ def fmt_summary_num(world):
     return '~~{}~~'.format(world.num)
 
 
-client = discord.Client()
+conn = aiohttp.TCPConnector(ssl=False)
+client = discord.Client(connector=conn)
 worldbot = WorldBot()
 
 @client.event
