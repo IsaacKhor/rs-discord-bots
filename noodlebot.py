@@ -239,9 +239,9 @@ async def pet(ctx):
 
 @client.check
 async def valid_channels(ctx):
-    is_dm = type(ctx.channel) == discord.DMChannel
+    # is_dm = type(ctx.channel) == discord.DMChannel
     is_valid_textchannel = type(ctx.channel) == discord.TextChannel and ctx.channel.name in CHANNELS
-    if not (is_dm or is_valid_textchannel):
+    if not is_valid_textchannel:
         raise InvalidChannelErr()
     return True
 
