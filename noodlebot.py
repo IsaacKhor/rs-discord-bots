@@ -61,6 +61,11 @@ class NoodleBot(object):
     def get_current(self):
         return self._active_world
 
+    def get_random_list(self):
+        cpy = list(self._worlds)
+        random.shuffle(cpy)
+        return cpy
+
     def set_current(self, world):
         self._active_world = world
 
@@ -217,6 +222,15 @@ async def roll_new_world(ctx):
     help='get current active world and number of worlds remaining')
 async def get_current_world(ctx):
     await ctx.send(f'Current world: {noodlebot.get_current()}. {noodlebot.worlds_remaining()} worlds remaining.')
+
+
+@client.command(
+    name='randomise',
+    aliases=['rand', 'r'],
+    help='Randomises world list')
+async def randomise(ctx):
+    await ctx.send(noodlebot.get_random_list())
+
 
 
 @client.command(name='split', help='split world list for scouts')
