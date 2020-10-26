@@ -191,7 +191,7 @@ async def mark_and_roll(ctx):
 
 @client.command(
     name='reroll',
-    aliases=['r']
+    aliases=['r'],
     help='set active world to new random')
 async def roll_new_world(ctx):
     new_world = noodlebot.get_random_active()
