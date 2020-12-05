@@ -8,7 +8,7 @@ import math
 import re
 
 CHANNELS = ['crashing-of-the-bands']
-CHANNEL_IDS = [770240313989791745, 719133080928911420]
+CHANNEL_IDS = [770240313989791745, 719133080928911420, 784577880922521610]
 
 HELP_STRING = """
 Noodlebot help:
@@ -209,7 +209,7 @@ async def roll_new_world(ctx):
     help='get/set current active world and number of worlds remaining')
 async def get_current_world(ctx, new_cur=None):
     if new_cur:
-        if not new_cur in P2P_WORLDS:
+        if new_cur not in P2P_WORLDS:
             raise ValueError(f'Invalid world: {new_cur}')
         noodlebot.set_current(new_cur)
     await ctx.send(f'Current world: {noodlebot.get_current()}. {noodlebot.worlds_remaining()} worlds remaining.')
