@@ -207,8 +207,8 @@ async def roll_new_world(ctx):
     name='cur',
     aliases=['current'],
     help='get/set current active world and number of worlds remaining')
-async def get_current_world(ctx, new_cur=-1:int):
-    if new_cur != -1:
+async def get_current_world(ctx, new_cur:int):
+    if new_cur:
         if new_cur not in P2P_WORLDS:
             raise ValueError(f'Invalid world: {new_cur}')
         noodlebot.set_current(new_cur)
@@ -239,9 +239,10 @@ async def split_world_list(ctx, chunks:int):
 async def pet(ctx):
     await ctx.send('*pets noodle*')
 
+
 @client.listen('on_message')
 async def log_msgs(msg):
-    print(msg.channel, msg.author, msg.content)
+    msglog.write(f'{msg.channel}\t{msg.author}\t{msg.content}\n')
 
 
 import sys
