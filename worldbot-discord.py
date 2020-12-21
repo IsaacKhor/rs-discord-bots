@@ -4,7 +4,10 @@ from botcore import *
 import discord
 import aiohttp
 
-CHANNELS = ['worldbot', 'bottest']
+BOT_CHANNEL = 790404971220041748
+WAVE_VOICE = 780814756713594951
+
+CHANNELS = [BOT_CHANNEL]
 
 help_string = """
 Worldbot instructions:
@@ -14,6 +17,7 @@ Worldbot instructions:
 - **.help** - show this help message
 - **.reset** - reset bot for next wave
 - **.debug** - show debug information
+- **.clean** - cleanup bot's own messages
 
 **Scouting commands** - The bot accepts any commands starting with a number
 followed by any of the following (spaces are optional for each command):
@@ -64,26 +68,24 @@ conn = aiohttp.TCPConnector(ssl=False)
 client = discord.Client(connector=conn)
 worldbot = WorldBot()
 
+def get_botchannel():
+    return client.get_channel(790404971220041748)
+
+
 @client.event
 async def on_ready():
     print('Logged is as {}'.format(client.user))
+    await get_botchannel().send('Bot starting up')
+
 
 @client.event
 async def on_command_error(err):
     print(type(err), err)
 
+
 @client.event
 async def on_message(message):
-    if message.author == client.user:
-        return
-
-    # Only respond to messages from:
-    # - DM
-    # - TextChannel 'worldbot' and 'bottest'
-    is_dm = type(message.channel) == discord.DMChannel
-    is_valid_textchannel = type(message.channel) == discord.TextChannel and message.channel.name in CHANNELS
-
-    if not (is_dm or is_valid_textchannel):
+    if message.author == client.user or not (message.channel.id in CHANNELS):
         return
 
     # Commands:
@@ -93,10 +95,10 @@ async def on_message(message):
     # - 'debug': show debug info
     # - others
 
-    cmd = message.content.strip()
+    cmd = message.content.strip().lower()
     retmsg = None
     try:
-        if cmd == '.help':
+        if cmd == '.help' or cmd == '.halp':
             retmsg = help_string
         elif cmd == 'list':
             worldbot.update_world_states()
@@ -107,6 +109,10 @@ async def on_message(message):
         elif cmd == '.reset':
             worldbot.reset_worlds()
             retmsg = 'Worlds successfully reset'
+        elif cmd == '.clean':
+            await message.channel.purge(limit=100, 
+                check=lambda m: m.author == client.user,
+                bulk=True)
         else:
             parse_update_command(cmd, worldbot)
     except Exception as e:
@@ -115,6 +121,19 @@ async def on_message(message):
     if retmsg:
         # Channel can be either worldbot channel or DM channel
         await message.channel.send(retmsg)
+
+
+@client.event
+async def on_voice_state_update(member, before, after):
+    print(f'{member.nick} before in {before.channel} after {after.channel}')
+
+    # Keep track of people leaving WBS voice
+    if (before.channel and 
+        before.channel.id == 780814756713594951 and
+        after.channel == None):
+        print(f'User {member.nick} left voice')
+        await get_botchannel().send(f'User {member.nick} left voice')
+
 
 import sys
 if len(sys.argv) < 2:

@@ -114,13 +114,14 @@ class World():
 
 
 P2P_WORLDS = [
-1,2,4,5,6,9,10,12,14,15,16,
+1,2,4,5,6,9,10,12,14,15,16,18,
 21,22,23,24,25,26,27,28,30,31,32,35,36,37,39,
 40,42,44,45,46,47,48,49,50,51,52,53,54,56,58,59,
 60,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,
 82,83,84,85,86,87,88,89,91,92,96,97,98,99,
 100,102,103,104,105,106,114,115,116,117,118,119,
 121,123,124,134,137,138,139,140]
+
 
 class WorldBot:
     def __init__(self, helpstr='TODO: helpstring'):
@@ -172,7 +173,8 @@ class WorldBot:
         active_dwfs = get_active_for_loc(Location.DWF, ',')
         active_elms = get_active_for_loc(Location.ELM, ',')
         active_rdis = get_active_for_loc(Location.RDI, ',')
-        active_unks = get_active_for_loc(Location.UNKNOWN, ',')
+        # active_unks = get_active_for_loc(Location.UNKNOWN, ',')
+        active_unks = ''
 
         all_active = [w for w in worlds if w.state == WorldState.ALIVE]
         all_active = sorted(all_active, key=lambda w: w.time, reverse=True)
@@ -326,6 +328,8 @@ def parse_update_command(s, botstate):
 
             if cmd.startswith('mins'):
                 cmd = remove_beginning('mins', cmd)
+            elif cmd.startswith('m'):
+                cmd = remove_beginning('m', cmd)
             else:
                 cmd = remove_beginning('gc', cmd)
                 ticks = mins*60 + secs
