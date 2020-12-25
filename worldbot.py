@@ -1,8 +1,39 @@
-import time, sys, string, re, datetime, functools
+import time, sys, string, re, datetime, functools, pprint
 from enum import Enum, auto
 
+HELP_STRING = """
+Worldbot instructions:
+
+[b]Commands[/b]:
+- [b]list[/b] - lists summary of current status
+- [b].help[/b] - show this help message
+- [b].reset[/b] - reset bot for next wave
+- [b].debug[/b] - show debug information
+- [b].reload[/b] - paste multiple lines from TS to re-parse
+
+[b]Scouting commands[/b] - The bot accepts any commands starting with a number
+followed by any of the following (spaces are optional for each command):
+- [b]'dwf|elm|rdi|unk'[/b] will update the world to that location, 'unk' is unknown
+- [b]'dead'[/b] will mark the world as dead
+- [b]'dies :07'[/b] marks the world as dying at :07
+- [b]'beaming'[/b] will mark the world as being actively beamed
+- Any combination of 3 of 'hcmfs' to add the world's tents
+- [b]'beamed :02'[/b] to mark world as beamed at 2 minutes past the hour.
+- [b]'beamed'[/b] with no number provided bot uses current time
+- [b]'xx:xx gc'[/b] for 'xx:xx' remaining on the game clock. The seconds part is optional
+- [b]'xx:xx mins'[/b] for xx:xx remaining in real time. The seconds part is optional
+- [b]'xx:xxm'[/b] m is short for mins
+- [b]'xx:xx'[/b] if 'gc' or 'mins' is not specified its assumed to be gameclock
+
+So for example:
+- '119dwf 10gc' marks world as dying in 10\\*0.6=6 minutes
+- '119 mhs 4:30mins' marks the world as dying in 4:30 minutes
+- '119 mhs 4m' marks the world as dying in 4 minutes
+- '28 dead'
+- '84 beamed02 hcf clear', you can combine multiple commands
+"""
 class WorldState(Enum):
-    UNCALLED = 'uncalled'
+    NOINFO = 'uncalled'
     BEAMING = 'beaming'
     ALIVE = 'active'
     DEAD = 'dead'
@@ -14,7 +45,7 @@ class Location(Enum):
     DWF = 'dwf'
     ELM = 'elm'
     RDI = 'rdi'
-    UNKNOWN = 'unk.'
+    UNKNOWN = 'unk'
 
     def __str__(self):
         return self.value
@@ -76,41 +107,52 @@ class World():
     def __init__(self, num):
         self.num = num
         self.loc = Location.UNKNOWN
-        self.state = WorldState.UNCALLED
+        self.state = WorldState.NOINFO
         self.tents = None
         self.time = None # Estimated death time
         self.notes = None
-        self.is_safe = True
-        self.is_scouted = False
 
     def __str__(self):
-        return '{} {} {} {} {} {} {} {}'.format(
-            self.num, self.loc, self.state, self.tents,
-            self.time, self.notes, self.is_safe, self.is_scouted)
+        return f'{self.num} {self.loc} {self.state}: {self.tents} {self.time} {self.notes}'
 
     def __repr__(self):
         return self.__str__()
 
-    def get_summary(self):
-        return '{} {} {} {} {}'.format(self.num, self.loc, self.tents, self.get_remaining_time_str(), self.notes)
-
     def get_remaining_time(self):
-        if not self.time:
+        if self.time == None:
             return -1
         return WbsTime.current().time_until(self.time)
 
-    def get_remaining_time_str(self):
-        t = self.get_remaining_time()
-        if t == -1:
-            return 'unknown'
-        return str(t)
+    def get_line_summary(self):
+        tent_str = '' if self.tents == None else self.tents
+        notes_str = '' if self.notes == None else self.notes
+        timestr = 'unknown' if self.time == None else str(self.get_remaining_time())
+        return f'{self.num} {self.loc}:\t{timestr}\t{tent_str}\t{notes_str}'
 
+    def get_num_summary(self):
+        t = self.get_remaining_time()
+        if self.state == WorldState.BEAMING:
+            color = 'blue'
+        elif t == -1:
+            color = 'black'
+        elif t.mins >= 3:
+            color = 'green'
+        else:
+            color = 'black'
+        return f'[color={color}]{self.num}[/color]'
 
     def update_state(self, curtime):
         if not self.time:
             return
         if self.state == WorldState.ALIVE and curtime >= self.time:
             self.state = WorldState.DEAD
+
+    def should_show(self):
+        return not (self.state == WorldState.NOINFO and
+                self.loc == Location.UNKNOWN and
+                self.tents == None and
+                self.time == None and
+                self.notes == None)
 
 
 P2P_WORLDS = [
@@ -124,9 +166,8 @@ P2P_WORLDS = [
 
 
 class WorldBot:
-    def __init__(self, helpstr='TODO: helpstring'):
+    def __init__(self):
         self._registry = None
-        self._helpstr = helpstr
         self.reset_worlds()
 
     def get_world(self, num):
@@ -144,7 +185,7 @@ class WorldBot:
 
         return self._registry
 
-    def update_world(self, num, loc, state, tents, time, notes, is_safe, is_scouted):
+    def update_world(self, num, loc, state, tents, time, notes):
         world = self.get_world(num)
         if loc:
             world.loc = loc
@@ -156,38 +197,44 @@ class WorldBot:
             world.time = time
         if notes:
             world.notes = notes
-        if is_safe:
-            world.is_safe = is_safe
-        if is_scouted:
-            world.is_scouted = is_scouted
+
+    def get_active_for_loc(self, loc):
+        return ','.join([w.get_num_summary() for w in self.get_worlds()
+            if w.loc == loc and w.should_show()])
 
     # Summary output
-    def get_current_status(self, status_format_str, world_format_func):
+    def get_current_status(self):
         worlds = self.get_worlds()
 
-        def get_active_for_loc(loc, joinchar):
-            return joinchar.join([world_format_func(w) for w in worlds
-                if w.loc == loc and w.state != WorldState.DEAD])
-
         dead_str = ','.join([str(w.num) for w in worlds if w.state == WorldState.DEAD])
-        active_dwfs = get_active_for_loc(Location.DWF, ',')
-        active_elms = get_active_for_loc(Location.ELM, ',')
-        active_rdis = get_active_for_loc(Location.RDI, ',')
-        # active_unks = get_active_for_loc(Location.UNKNOWN, ',')
-        active_unks = ''
+        active_dwfs = self.get_active_for_loc(Location.DWF)
+        active_elms = self.get_active_for_loc(Location.ELM)
+        active_rdis = self.get_active_for_loc(Location.RDI)
+        active_unks = self.get_active_for_loc(Location.UNKNOWN)
 
         all_active = [w for w in worlds if w.state == WorldState.ALIVE]
         all_active = sorted(all_active, key=lambda w: w.time, reverse=True)
-        all_active_str = '\n'.join(map(lambda w: w.get_summary(), all_active))
+        all_active_str = '\n'.join([w.get_line_summary() for w in all_active])
 
-        return status_format_str.format(active_dwfs, active_elms,
-            active_rdis, active_unks, dead_str, all_active_str)
+
+        return f"""
+[b]Active[/b] (unknown, [color=blue]beaming[/color], [color=green]>3 mins[/color], [color=red]<3mins[/color]):
+[b]DWF[/b]: {active_dwfs}
+[b]ELM[/b]: {active_elms}
+[b]RDI[/b]: {active_rdis}
+[b]UNK[/b]: {active_unks}
+
+[b]Dead[/b]: {dead_str}
+
+[b]Summary of active worlds (world / location / tents / time remaining / remarks)[/b]
+{all_active_str}
+"""
 
     def get_debug_info(self):
-        return str(self._registry)
+        return pprint.pformat(self._registry)
 
     def get_help_info(self):
-        return self._helpstr
+        return HELP_STRING
 
     def update_world_states(self):
         curtime = WbsTime.current()
@@ -258,30 +305,36 @@ def parse_update_command(s, botstate):
     s = s[m.span()[1]:].lstrip()
 
     # Determine updates (possible: location, state, tents, time, notes)
-    loc, state, tents, time, notes, is_safe, is_scouted = None,None,None,None,None,None,None
+    loc, state, tents, time, notes, = None,None,None,None,None
 
     cmd = s
     while cmd:
-        # print('[DEBUG] parsing "{}", 0:3 is "{}"'.format(cmd, cmd[0:3]))
         if cmd.startswith('dead'):
             state = WorldState.DEAD
-            is_scouted = True
             cmd = remove_beginning('dead', cmd)
             continue
-        elif cmd.startswith('unsafe'):
-            is_safe = False
-            is_scouted = True
-            cmd = remove_beginning('unsafe', cmd)
+
+        # Syntax: 'dies :05'
+        elif cmd.startswith('dies'):
+            cmd = remove_beginning('dies', cmd)
+            num, cmd = get_beg_number(cmd)
+            if not num:
+                continue
+
+            time = WbsTime(int(num), 0)
+            state = WorldState.ALIVE
             continue
+
         elif cmd.startswith('beaming'):
             state = WorldState.BEAMING
             cmd = remove_beginning('beaming', cmd)
             continue
+
         elif is_tents(cmd[0:3]):
             tents = cmd[0:3]
-            is_scouted = True
             cmd = cmd[3:].lstrip()
             continue
+
         elif is_location(cmd[0:3]):
             loc = convert_location(cmd[0:3])
             cmd = cmd[3:].lstrip()
@@ -294,34 +347,22 @@ def parse_update_command(s, botstate):
 
             time = WbsTime.get_abs_minute_or_cur(num).add_mins(10)
             state = WorldState.ALIVE
-            is_scouted = True
             continue
 
         # Syntax: 'broken :02', same syntax as beamed
-        elif cmd.startswith('broken'):
+        elif cmd.startswith('broke'):
+            cmd = remove_beginning('broke', cmd)
             cmd = remove_beginning('broken', cmd)
             num, cmd = get_beg_number(cmd)
 
             time = WbsTime.get_abs_minute_or_cur(num).add_mins(5)
             state = WorldState.ALIVE
-            is_scouted = True
-            continue
-
-        # Syntax: 'dies :05'
-        elif cmd.startswith('dies'):
-            cmd = remove_beginning('dies', cmd)
-            num, cmd = get_beg_number(cmd)
-            if not num:
-                continue
-
-            time = WbsTime(int(num), 0)
-            state = WorldState.ALIVE
-            is_scouted = True
             continue
 
         # Syntax: 'xx:xx gc', the seconds and gc part optional
         # Uses gameclock by default. To override use 'mins' postfix
-        elif cmd[0].isnumeric():
+        # Don't use isnumeric because it accepts wierd unicode codepoints
+        elif cmd[0] in '0123456789':
             mins, cmd = get_beg_number(cmd)
             secs, cmd = get_beg_number(cmd)
             secs = secs if secs else 0
@@ -338,7 +379,6 @@ def parse_update_command(s, botstate):
 
             time = WbsTime.current().add(WbsTime(int(mins), int(secs)))
             state = WorldState.ALIVE
-            is_scouted = True
             continue
 
         # Everything after first unrecognised token are notes
@@ -346,7 +386,5 @@ def parse_update_command(s, botstate):
             notes = cmd
             cmd = ''
 
-    # print('[LOG]: updating {}/{}/{}/{}/{}/{}/{}/{}'.format(
-    #     world_num, loc, state, tents, time, notes, is_safe, is_scouted))
-    botstate.update_world(world_num, loc, state, tents, time, notes,
-        is_safe, is_scouted)
+    # print(f'Updating: {world_num}, {loc}, {state}, {tents}, {time}, {notes}')
+    botstate.update_world(world_num, loc, state, tents, time, notes)
