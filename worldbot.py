@@ -7,7 +7,7 @@ Worldbot instructions:
 [b]Commands[/b]:
 - [b]list[/b] - lists summary of current status
 - [b].help[/b] - show this help message
-- [b].reset[/b] - reset bot for next wave
+- [b].reset[/b] - reset bot for next wave. Requires a password.
 - [b].debug[/b] - show debug information
 - [b].reload[/b] - paste multiple lines from TS to re-parse
 
@@ -31,6 +31,12 @@ So for example:
 - '119 mhs 4m' marks the world as dying in 4 minutes
 - '28 dead'
 - '84 beamed02 hcf clear', you can combine multiple commands
+
+Further notes:
+- Spaces are optional between different information to update a world. That
+  means '10elmhcf7m' is just as valid as '10 elm hcf 7m'.
+- For all time inputs the colon and seconds part is optional. For example,
+  both '7' and '7:15' are both perfectly valid times, but not '715'.
 """
 class WorldState(Enum):
     NOINFO = 'uncalled'

@@ -1,5 +1,9 @@
 import telnetlib, threading, socket, sys
 
+TARGETMODE_PRIVATE = 1
+TARGETMODE_CHANNEL = 2
+TARGETMODE_SERVER = 3
+
 class TSErr:
 	def __init__(self, eid, msg):
 		self.eid = eid

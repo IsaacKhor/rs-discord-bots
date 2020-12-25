@@ -2,7 +2,7 @@
 
 import traceback
 from worldbot import *
-from ts3shim import ClientqueryConn
+import ts3shim
 
 if len(sys.argv) < 2:
     print("Usage: ./worldbot-ts3.py <tspass>")
@@ -13,8 +13,9 @@ PORT = 25639
 CHANNEL_ID = 2
 NICKNAME = 'worldbot'
 CLIENTQUERY_API_KEY = sys.argv[1]
+RESET_PASSWORD = 'pewpew'
 
-conn = ClientqueryConn(host=HOST, port=PORT, apikey=CLIENTQUERY_API_KEY)
+conn = ts3shim.ClientqueryConn(host=HOST, port=PORT, apikey=CLIENTQUERY_API_KEY)
 worldbot = WorldBot()
 
 ORIGINAL_EASTER_EGGS = {
@@ -37,7 +38,7 @@ def on_notify_msg(msg):
         # return
 
     try:
-        cmd = msg.msg.strip()
+        cmd = msg.msg.strip().lower()
         retmsg = None
         if cmd == '.help':
             return worldbot.get_help_info()
@@ -47,7 +48,20 @@ def on_notify_msg(msg):
         elif cmd == '.debug':
             worldbot.update_world_states()
             return worldbot.get_debug_info()
-        elif cmd == '.reset':
+
+        elif cmd.startswith('.reset'):
+            # Ensure permissions
+            if msg.targetmode != ts3shim.TARGETMODE_PRIVATE:
+                return 'You can only reset in PMs with the correct password'
+
+            toks = [s.strip() for s in cmd.split(' ')]
+            if len(toks) < 2:
+                return 'Password required'
+
+            password = toks[1]
+            if password != RESET_PASSWORD:
+                return 'Invalid password'
+
             worldbot.reset_worlds()
             return 'Worlds successfully reset'
 
