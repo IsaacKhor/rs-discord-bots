@@ -11,7 +11,7 @@ if len(sys.argv) < 2:
 HOST = 'localhost'
 PORT = 25639
 CHANNEL_ID = 2
-NICKNAME = 'worldbot'
+NICKNAME = 'Worldbot'
 CLIENTQUERY_API_KEY = sys.argv[1]
 RESET_PASSWORD = 'pewpew'
 
@@ -34,8 +34,8 @@ ORIGINAL_EASTER_EGGS = {
 def on_notify_msg(msg):
     # print(msg)
     # Dont respond to our own messages
-    # if msg.invokername == conn.id:
-        # return
+    if msg.invokername == NICKNAME:
+        return
 
     try:
         cmd = msg.msg.strip().lower()
