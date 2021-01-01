@@ -13,7 +13,6 @@ PORT = 25639
 CHANNEL_ID = 2
 NICKNAME = 'Worldbot'
 CLIENTQUERY_API_KEY = sys.argv[1]
-RESET_PASSWORD = 'pewpew'
 
 def pull_and_reload():
     # Pull from github

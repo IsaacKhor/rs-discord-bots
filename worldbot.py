@@ -2,6 +2,29 @@ import time, sys, string, re, datetime, functools, pprint, traceback
 import ts3shim
 from enum import Enum, auto
 
+RESET_PASSWORD = 'pewpew'
+NUM_PAT = re.compile(r'^(\d+)')
+P2P_WORLDS = [
+1,2,4,5,6,9,10,12,14,15,16,18,
+21,22,23,24,25,26,27,28,30,31,32,35,36,37,39,
+40,42,44,45,46,47,48,49,50,51,52,53,54,56,58,59,
+60,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,
+82,83,84,85,86,87,88,89,91,92,96,97,98,99,
+100,102,103,104,105,106,114,115,116,117,118,119,
+121,123,124,134,137,138,139,140]
+
+ORIGINAL_EASTER_EGGS = {
+    '!wbu': '75/75 or silently refunds you',
+    '!ally': 'Gatorrrrrrrrrr',
+    '!faery': 'Language! biaatch',
+    '!sever': 'Who is sever squad?',
+    '!apk': 'Sorry buddy, APK is dead. Maybe the radiation got them',
+    '!il': 'ts3server://illuzionwbs.teamspeak.vg',
+    '!lat': 'Who?',
+    '!rpk': 'Who?',
+    '!take': 'Not implemented. Feel free to scout whatever world you want'
+}
+
 HELP_STRING = """
 Worldbot instructions:
 
@@ -161,29 +184,6 @@ class World():
                 self.time == None and
                 self.notes == None)
 
-
-P2P_WORLDS = [
-1,2,4,5,6,9,10,12,14,15,16,18,
-21,22,23,24,25,26,27,28,30,31,32,35,36,37,39,
-40,42,44,45,46,47,48,49,50,51,52,53,54,56,58,59,
-60,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,
-82,83,84,85,86,87,88,89,91,92,96,97,98,99,
-100,102,103,104,105,106,114,115,116,117,118,119,
-121,123,124,134,137,138,139,140]
-
-NUM_PAT = re.compile(r'^(\d+)')
-
-ORIGINAL_EASTER_EGGS = {
-    '!wbu': '75/75 or silently refunds you',
-    '!ally': 'Gatorrrrrrrrrr',
-    '!faery': 'Language! biaatch',
-    '!sever': 'Who is sever squad?',
-    '!apk': 'Sorry buddy, APK is dead. Maybe the radiation got them',
-    '!il': 'ts3server://illuzionwbs.teamspeak.vg',
-    '!lat': 'Who?',
-    '!rpk': 'Who?',
-    '!take': 'Not implemented. Feel free to scout whatever world you want'
-}
 
 class WorldBot:
     def __init__(self):
@@ -457,4 +457,4 @@ class WorldBot:
 
         except Exception as e:
             traceback.print_exc()
-            return 'Error: ' + str(e) + '\n' + traceback.format_exception()
+            return 'Error: ' + str(e) + '\n' + traceback.format_exc()
