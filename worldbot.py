@@ -1,4 +1,5 @@
-import time, sys, string, re, datetime, functools, pprint
+import time, sys, string, re, datetime, functools, pprint, traceback
+import ts3shim
 from enum import Enum, auto
 
 HELP_STRING = """
@@ -170,6 +171,19 @@ P2P_WORLDS = [
 100,102,103,104,105,106,114,115,116,117,118,119,
 121,123,124,134,137,138,139,140]
 
+NUM_PAT = re.compile(r'^(\d+)')
+
+ORIGINAL_EASTER_EGGS = {
+    '!wbu': '75/75 or silently refunds you',
+    '!ally': 'Gatorrrrrrrrrr',
+    '!faery': 'Language! biaatch',
+    '!sever': 'Who is sever squad?',
+    '!apk': 'Sorry buddy, APK is dead. Maybe the radiation got them',
+    '!il': 'ts3server://illuzionwbs.teamspeak.vg',
+    '!lat': 'Who?',
+    '!rpk': 'Who?',
+    '!take': 'Not implemented. Feel free to scout whatever world you want'
+}
 
 class WorldBot:
     def __init__(self):
@@ -263,134 +277,184 @@ class WorldBot:
 # - Everything else goes into "notes"
 # - The finite state automaton almost writes itself
 
-NUM_PAT = re.compile(r'^(\d+)')
+    def parse_update_command(self, s):
+        def is_location(tok):
+            return tok in ['dwf', 'elm', 'rdi', 'unk']
 
-def parse_update_command(s, botstate):
-    def is_location(tok):
-        return tok in ['dwf', 'elm', 'rdi', 'unk']
+        def is_tents(tok):
+            return len(tok) == 3 and all(c in 'mhcsf' for c in tok)
 
-    def is_tents(tok):
-        return len(tok) == 3 and all(c in 'mhcsf' for c in tok)
+        def remove_beginning(item, tok):
+            if tok.startswith(item):
+                return tok[len(item):].lstrip(' :')
+            return tok
 
-    def remove_beginning(item, tok):
-        if tok.startswith(item):
-            return tok[len(item):].lstrip(' :')
-        return tok
+        def get_beg_number(s):
+            num, string = match_beginning(NUM_PAT, s)
+            if num:
+                num = int(num)
+            return num, string
 
-    def get_beg_number(s):
-        num, string = match_beginning(NUM_PAT, s)
-        if num:
-            num = int(num)
-        return num, string
+        def match_beginning(pat, s):
+            m = re.match(pat, s)
+            if not m:
+                return None, s
+            else:
+                return m.group(), s[m.span()[1]:].lstrip(' :')
 
-    def match_beginning(pat, s):
-        m = re.match(pat, s)
+        def convert_location(tok):
+            if tok == 'rdi':
+                return Location.RDI
+            if tok == 'elm':
+                return Location.ELM
+            if tok == 'dwf':
+                return Location.DWF
+            return Location.UNKNOWN
+
+        s = s.strip().lower()
+
+        # Try to match number at beginning of string
+        m = re.match(NUM_PAT, s)
         if not m:
-            return None, s
-        else:
-            return m.group(), s[m.span()[1]:].lstrip(' :')
+            return
+        world_num = int(m.group())
 
-    def convert_location(tok):
-        if tok == 'rdi':
-            return Location.RDI
-        if tok == 'elm':
-            return Location.ELM
-        if tok == 'dwf':
-            return Location.DWF
-        return Location.UNKNOWN
+        # Consume the world number and optional whitespace
+        s = s[m.span()[1]:].lstrip()
 
-    s = s.strip().lower()
+        # Determine updates (possible: location, state, tents, time, notes)
+        loc, state, tents, time, notes, = None,None,None,None,None
 
-    # Try to match number at beginning of string
-    m = re.match(NUM_PAT, s)
-    if not m:
-        return
-    world_num = int(m.group())
-
-    # Consume the world number and optional whitespace
-    s = s[m.span()[1]:].lstrip()
-
-    # Determine updates (possible: location, state, tents, time, notes)
-    loc, state, tents, time, notes, = None,None,None,None,None
-
-    cmd = s
-    while cmd:
-        if cmd.startswith('dead'):
-            state = WorldState.DEAD
-            cmd = remove_beginning('dead', cmd)
-            continue
-
-        # Syntax: 'dies :05'
-        elif cmd.startswith('dies'):
-            cmd = remove_beginning('dies', cmd)
-            num, cmd = get_beg_number(cmd)
-            if not num:
+        cmd = s
+        while cmd:
+            if cmd.startswith('dead'):
+                state = WorldState.DEAD
+                cmd = remove_beginning('dead', cmd)
                 continue
 
-            time = WbsTime(int(num), 0)
-            state = WorldState.ALIVE
-            continue
+            # Syntax: 'dies :05'
+            elif cmd.startswith('dies'):
+                cmd = remove_beginning('dies', cmd)
+                num, cmd = get_beg_number(cmd)
+                if not num:
+                    continue
 
-        elif cmd.startswith('beaming'):
-            state = WorldState.BEAMING
-            cmd = remove_beginning('beaming', cmd)
-            continue
+                time = WbsTime(int(num), 0)
+                state = WorldState.ALIVE
+                continue
 
-        elif is_tents(cmd[0:3]):
-            tents = cmd[0:3]
-            cmd = cmd[3:].lstrip()
-            continue
+            elif cmd.startswith('beaming'):
+                state = WorldState.BEAMING
+                cmd = remove_beginning('beaming', cmd)
+                continue
 
-        elif is_location(cmd[0:3]):
-            loc = convert_location(cmd[0:3])
-            cmd = cmd[3:].lstrip()
-            continue
+            elif is_tents(cmd[0:3]):
+                tents = cmd[0:3]
+                cmd = cmd[3:].lstrip()
+                continue
 
-        # Syntax: 'beamed :02', space, colon, and time all optional
-        elif cmd.startswith('beamed'):
-            cmd = remove_beginning('beamed', cmd)
-            num, cmd = get_beg_number(cmd)
+            elif is_location(cmd[0:3]):
+                loc = convert_location(cmd[0:3])
+                cmd = cmd[3:].lstrip()
+                continue
 
-            time = WbsTime.get_abs_minute_or_cur(num).add_mins(10)
-            state = WorldState.ALIVE
-            continue
+            # Syntax: 'beamed :02', space, colon, and time all optional
+            elif cmd.startswith('beamed'):
+                cmd = remove_beginning('beamed', cmd)
+                num, cmd = get_beg_number(cmd)
 
-        # Syntax: 'broken :02', same syntax as beamed
-        elif cmd.startswith('broke'):
-            cmd = remove_beginning('broke', cmd)
-            cmd = remove_beginning('broken', cmd)
-            num, cmd = get_beg_number(cmd)
+                time = WbsTime.get_abs_minute_or_cur(num).add_mins(10)
+                state = WorldState.ALIVE
+                continue
 
-            time = WbsTime.get_abs_minute_or_cur(num).add_mins(5)
-            state = WorldState.ALIVE
-            continue
+            # Syntax: 'broken :02', same syntax as beamed
+            elif cmd.startswith('broke'):
+                cmd = remove_beginning('broke', cmd)
+                cmd = remove_beginning('broken', cmd)
+                num, cmd = get_beg_number(cmd)
 
-        # Syntax: 'xx:xx gc', the seconds and gc part optional
-        # Uses gameclock by default. To override use 'mins' postfix
-        # Don't use isnumeric because it accepts wierd unicode codepoints
-        elif cmd[0] in '0123456789':
-            mins, cmd = get_beg_number(cmd)
-            secs, cmd = get_beg_number(cmd)
-            secs = secs if secs else 0
+                time = WbsTime.get_abs_minute_or_cur(num).add_mins(5)
+                state = WorldState.ALIVE
+                continue
 
-            if cmd.startswith('mins'):
-                cmd = remove_beginning('mins', cmd)
-            elif cmd.startswith('m'):
-                cmd = remove_beginning('m', cmd)
+            # Syntax: 'xx:xx gc', the seconds and gc part optional
+            # Uses gameclock by default. To override use 'mins' postfix
+            # Don't use isnumeric because it accepts wierd unicode codepoints
+            elif cmd[0] in '0123456789':
+                mins, cmd = get_beg_number(cmd)
+                secs, cmd = get_beg_number(cmd)
+                secs = secs if secs else 0
+
+                if cmd.startswith('mins'):
+                    cmd = remove_beginning('mins', cmd)
+                elif cmd.startswith('m'):
+                    cmd = remove_beginning('m', cmd)
+                else:
+                    cmd = remove_beginning('gc', cmd)
+                    ticks = mins*60 + secs
+                    total_secs = ticks*0.6
+                    mins, secs = divmod(total_secs, 60)
+
+                time = WbsTime.current().add(WbsTime(int(mins), int(secs)))
+                state = WorldState.ALIVE
+                continue
+
+            # Everything after first unrecognised token are notes
             else:
-                cmd = remove_beginning('gc', cmd)
-                ticks = mins*60 + secs
-                total_secs = ticks*0.6
-                mins, secs = divmod(total_secs, 60)
+                notes = cmd
+                cmd = ''
 
-            time = WbsTime.current().add(WbsTime(int(mins), int(secs)))
-            state = WorldState.ALIVE
-            continue
+        # print(f'Updating: {world_num}, {loc}, {state}, {tents}, {time}, {notes}')
+        self.update_world(world_num, loc, state, tents, time, notes)
 
-        # Everything after first unrecognised token are notes
-        else:
-            notes = cmd
-            cmd = ''
+    def on_notify_msg(self, msgtxt, targetmode, senderid, sendername):
+        try:
+            cmd = msgtxt.strip().lower()
+            if cmd == '.help':
+                return self.get_help_info()
+            elif cmd == 'list':
+                self.update_world_states()
+                return self.get_current_status()
+            elif cmd == '.debug':
+                self.update_world_states()
+                return self.get_debug_info()
 
-    # print(f'Updating: {world_num}, {loc}, {state}, {tents}, {time}, {notes}')
-    botstate.update_world(world_num, loc, state, tents, time, notes)
+            elif cmd.startswith('.reset'):
+                # Ensure permissions
+                if targetmode != ts3shim.TARGETMODE_PRIVATE:
+                    return 'You can only reset in PMs with the correct password'
+
+                toks = [s.strip() for s in cmd.split(' ')]
+                if len(toks) < 2:
+                    return 'Password required'
+
+                password = toks[1]
+                if password != RESET_PASSWORD:
+                    return 'Invalid password'
+
+                self.reset_worlds()
+                return 'Worlds successfully reset'
+
+            # Bot crashed, have to restart
+            elif cmd.startswith('.reload'):
+                cmd = cmd[len('.reload '):]
+                lns = cmd.split('\n')
+                for l in lns:
+                    i = l.find(':', 10)
+                    l = l[i+2:]
+                    if l[0].isnumeric():
+                        self.parse_update_command(l)
+
+            # Implement original worldbot commands
+            elif 'cpkwinsagain' in cmd:
+                return sendername + ' you should STFU!'
+
+            else:
+                for k,v in ORIGINAL_EASTER_EGGS.items():
+                    if k in cmd:
+                        return v
+                self.parse_update_command(cmd)
+
+        except Exception as e:
+            traceback.print_exc()
+            return 'Error: ' + str(e) + '\n' + traceback.format_exception()

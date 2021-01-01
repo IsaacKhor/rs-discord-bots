@@ -1,4 +1,4 @@
-import telnetlib, threading, socket, sys
+import telnetlib, threading, socket, sys, traceback
 
 TARGETMODE_PRIVATE = 1
 TARGETMODE_CHANNEL = 2
@@ -86,6 +86,7 @@ class ClientqueryConn:
 		# Authenticate with clientquery
 		self._auth(apikey)
 
+
 	def _send(self, cmd):
 		self._conn.write(cmd)
 
@@ -116,6 +117,10 @@ class ClientqueryConn:
 		self._ensure_okret()
 
 
+	def close(self):
+		self._conn.close()
+
+
 	def _whoami(self):
 		self._send(format_cmd('whoami'))
 		resp = self._getline_parsed()
@@ -127,6 +132,13 @@ class ClientqueryConn:
 		self._send(format_cmd('whoami'))
 		resp = self._getline_parsed()
 		self._ensure_okret()
+
+
+	def send_channel_msg(self, msg):
+		self._send(format_cmd('sendtextmessage', {
+			'targetmode': TARGETMODE_CHANNEL,
+			'msg': msg
+			}))
 
 
 	def set_msg_handler(self, handler):
