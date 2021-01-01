@@ -33,6 +33,7 @@ def on_notify_msg(msg):
         msg.msg.lower().strip() == '.redeploy secretredeploypassword'):
         pull_and_reload()
         botcore = worldbot.WorldBot()
+        return 'Redeploy successful'
 
     if (msg.msg.startswith('.exit') and
         msg.targetmode == ts3shim.TARGETMODE_PRIVATE and
