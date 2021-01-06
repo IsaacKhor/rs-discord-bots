@@ -153,7 +153,7 @@ class ClientqueryConn:
 		self._ensure_okret()
 
 		while True:
-			resp = self._conn.read_until(b'\n\r', timeout=60)
+			resp = self._conn.read_until(b'\n\r', timeout=20)
 			print(f'Processing: {resp}')
 			if len(resp) == 0:
 				# Heartbeat
