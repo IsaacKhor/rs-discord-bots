@@ -22,7 +22,16 @@ ORIGINAL_EASTER_EGGS = {
     '!il': 'ts3server://illuzionwbs.teamspeak.vg',
     '!lat': 'Who?',
     '!rpk': 'Who?',
-    '!take': 'Not implemented. Feel free to scout whatever world you want'
+    '!take': 'Not implemented. Feel free to scout whatever world you want',
+    '.wbu': '75/75 or silently refunds you',
+    '.ally': 'Gatorrrrrrrrrr',
+    '.faery': 'Language! biaatch',
+    '.sever': 'Who is sever squad?',
+    '.apk': 'Sorry buddy, APK is dead. Maybe the radiation got them',
+    '.il': 'ts3server://illuzionwbs.teamspeak.vg',
+    '.lat': 'Who?',
+    '.rpk': 'Who?',
+    '.take': 'Not implemented. Feel free to scout whatever world you want'
 }
 
 HELP_STRING = """
@@ -168,7 +177,7 @@ class World():
         elif t.mins >= 3:
             color = 'green'
         else:
-            color = 'black'
+            color = 'red'
         return f'[color={color}]{self.num}[/color]'
 
     def update_state(self, curtime):
@@ -188,6 +197,7 @@ class World():
 class WorldBot:
     def __init__(self):
         self._registry = None
+        self._fcname = 'Wbs united'
         self.reset_worlds()
 
     def get_world(self, num):
@@ -199,6 +209,7 @@ class WorldBot:
         return self._registry.values()
 
     def reset_worlds(self):
+        self._fcname = 'Wbs united'
         self._registry = dict()
         for num in P2P_WORLDS:
             self._registry[num] = World(num)
@@ -444,6 +455,15 @@ class WorldBot:
                     l = l[i+2:]
                     if l[0].isnumeric():
                         self.parse_update_command(l)
+
+            # Automated fc query
+            elif cmd.startswith('.fc'):
+                fcname = cmd[len('.fc '):]
+                self._fcname = fcname
+
+            elif 'fc?' in cmd or 'fcs?' in cmd:
+                return f'Using FC: {self._fcname}'
+
 
             # Implement original worldbot commands
             elif 'cpkwinsagain' in cmd:
