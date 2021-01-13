@@ -14,6 +14,8 @@ CHANNEL_ID = 2
 NICKNAME = 'Worldbot'
 CLIENTQUERY_API_KEY = sys.argv[1]
 
+VERSION = '1.0.0'
+
 def pull_and_reload():
     # Pull from github
     os.system('git pull')
@@ -43,6 +45,9 @@ def on_notify_msg(msg):
         msg.targetmode == ts3shim.TARGETMODE_PRIVATE and
         msg.msg.lower().strip() == '.exit stopandexitprettyplz'):
         exit()
+
+    if msg.msg.startswith('.version'):
+        return 'Current bot version: ' + VERSION + '. Written by CraftyElk :D'
 
     return botcore.on_notify_msg(msg.msg, msg.targetmode, msg.invokerid, msg.invokername)
 
