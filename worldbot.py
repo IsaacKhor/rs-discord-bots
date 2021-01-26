@@ -40,9 +40,13 @@ Worldbot instructions:
 [b]Commands[/b]:
 - [b]list[/b] - lists summary of current status
 - [b].help[/b] - show this help message
-- [b].reset[/b] - reset bot for next wave. Requires a password.
 - [b].debug[/b] - show debug information
 - [b].reload[/b] - paste multiple lines from TS to re-parse
+- [b].fc <fcname>[/b] - sets active fc
+- [b]fc?[/b] - shows current fc set by '.fc'
+
+[b]Priveledged commands[/b]:
+- [b].reset[/b] - reset bot for next wave. Requires a password.
 
 [b]Scouting commands[/b] - The bot accepts any commands starting with a number
 followed by any of the following (spaces are optional for each command):
@@ -71,6 +75,7 @@ Further notes:
 - For all time inputs the colon and seconds part is optional. For example,
   both '7' and '7:15' are both perfectly valid times, but not '715'.
 """
+
 class WorldState(Enum):
     NOINFO = 'uncalled'
     BEAMING = 'beaming'
@@ -88,6 +93,10 @@ class Location(Enum):
 
     def __str__(self):
         return self.value
+
+class InvalidWorldErr(Exception):
+    def __init__(self, world):
+       super().__init__(f'World {world} is not a valid world')
 
 # Reimplement time because we only care about mins/secs
 # and using python's datetime lib just makes things unneccesarily complicated
@@ -474,6 +483,9 @@ class WorldBot:
                     if k in cmd:
                         return v
                 self.parse_update_command(cmd)
+
+        except InvalidWorldErr as e:
+            return str(e)
 
         except Exception as e:
             traceback.print_exc()
