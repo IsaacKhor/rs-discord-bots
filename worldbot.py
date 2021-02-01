@@ -2,8 +2,10 @@ import time, sys, string, re, datetime, functools, pprint, traceback
 import ts3shim
 from enum import Enum, auto
 
+VERSION = '2.0.0'
 RESET_PASSWORD = 'pewpew'
 NUM_PAT = re.compile(r'^(\d+)')
+DEFAULT_FC = 'Wbs United'
 P2P_WORLDS = [
 1,2,4,5,6,9,10,12,14,15,16,18,
 21,22,23,24,25,26,27,28,30,31,32,35,36,37,39,
@@ -13,7 +15,8 @@ P2P_WORLDS = [
 100,102,103,104,105,106,114,115,116,117,118,119,
 121,123,124,134,137,138,139,140]
 
-ORIGINAL_EASTER_EGGS = {
+EASTER_EGGS = {
+    'wtf is the fc': 'User is not a nice person. This incident will be reported. Especially Kyle. That guy\'s evil',
     '!wbu': '75/75 or silently refunds you',
     '!ally': 'Gatorrrrrrrrrr',
     '!faery': 'Language! biaatch',
@@ -37,30 +40,30 @@ ORIGINAL_EASTER_EGGS = {
 HELP_STRING = """
 Worldbot instructions:
 
-[b]Commands[/b]:
-- [b]list[/b] - lists summary of current status
-- [b].help[/b] - show this help message
-- [b].debug[/b] - show debug information
-- [b].reload[/b] - paste multiple lines from TS to re-parse
-- [b].fc <fcname>[/b] - sets active fc
-- [b]fc?[/b] - shows current fc set by '.fc'
+**Commands**:
+- **list** - lists summary of current status
+- **.help** - show this help message
+- **.debug** - show debug information
+- **.reload** - paste multiple lines from TS to re-parse
+- **.fc <fcname>** - sets active fc
+- **fc?** - shows current fc set by '.fc'
 
-[b]Priveledged commands[/b]:
-- [b].reset[/b] - reset bot for next wave. Requires a password.
+**Priveledged commands**:
+- **.reset** - reset bot for next wave. Requires a password.
 
-[b]Scouting commands[/b] - The bot accepts any commands starting with a number
+**Scouting commands** - The bot accepts any commands starting with a number
 followed by any of the following (spaces are optional for each command):
-- [b]'dwf|elm|rdi|unk'[/b] will update the world to that location, 'unk' is unknown
-- [b]'dead'[/b] will mark the world as dead
-- [b]'dies :07'[/b] marks the world as dying at :07
-- [b]'beaming'[/b] will mark the world as being actively beamed
+- **'dwf|elm|rdi|unk'** will update the world to that location, 'unk' is unknown
+- **'dead'** will mark the world as dead
+- **'dies :07'** marks the world as dying at :07
+- **'beaming'** will mark the world as being actively beamed
 - Any combination of 3 of 'hcmfs' to add the world's tents
-- [b]'beamed :02'[/b] to mark world as beamed at 2 minutes past the hour.
-- [b]'beamed'[/b] with no number provided bot uses current time
-- [b]'xx:xx gc'[/b] for 'xx:xx' remaining on the game clock. The seconds part is optional
-- [b]'xx:xx mins'[/b] for xx:xx remaining in real time. The seconds part is optional
-- [b]'xx:xxm'[/b] m is short for mins
-- [b]'xx:xx'[/b] if 'gc' or 'mins' is not specified its assumed to be gameclock
+- **'beamed :02'** to mark world as beamed at 2 minutes past the hour.
+- **'beamed'** with no number provided bot uses current time
+- **'xx:xx gc'** for 'xx:xx' remaining on the game clock. The seconds part is optional
+- **'xx:xx mins'** for xx:xx remaining in real time. The seconds part is optional
+- **'xx:xxm'** m is short for mins
+- **'xx:xx'** if 'gc' or 'mins' is not specified its assumed to be gameclock
 
 So for example:
 - '119dwf 10gc' marks world as dying in 10\\*0.6=6 minutes
@@ -90,6 +93,13 @@ class Location(Enum):
     ELM = 'elm'
     RDI = 'rdi'
     UNKNOWN = 'unk'
+
+    def __str__(self):
+        return self.value
+
+class Targetmode(Enum):
+    PUBLIC = 'public'
+    PRIVATE = 'private'
 
     def __str__(self):
         return self.value
@@ -180,14 +190,13 @@ class World():
     def get_num_summary(self):
         t = self.get_remaining_time()
         if self.state == WorldState.BEAMING:
-            color = 'blue'
+            return f'*{self.num}*'
         elif t == -1:
-            color = 'black'
+            return f'{self.num}'
         elif t.mins >= 3:
-            color = 'green'
+            return f'__{self.num}__'
         else:
-            color = 'red'
-        return f'[color={color}]{self.num}[/color]'
+            return f'~~{self.num}~~'
 
     def update_state(self, curtime):
         if not self.time:
@@ -206,7 +215,7 @@ class World():
 class WorldBot:
     def __init__(self):
         self._registry = None
-        self._fcname = 'Wbs united'
+        self._fcname = DEFAULT_FC
         self.reset_worlds()
 
     def get_world(self, num):
@@ -218,7 +227,7 @@ class WorldBot:
         return self._registry.values()
 
     def reset_worlds(self):
-        self._fcname = 'Wbs united'
+        self._fcname = DEFAULT_FC
         self._registry = dict()
         for num in P2P_WORLDS:
             self._registry[num] = World(num)
@@ -246,7 +255,7 @@ class WorldBot:
     def get_current_status(self):
         worlds = self.get_worlds()
 
-        dead_str = ','.join([str(w.num) for w in worlds if w.state == WorldState.DEAD])
+        dead_str = ', '.join([str(w.num) for w in worlds if w.state == WorldState.DEAD])
         active_dwfs = self.get_active_for_loc(Location.DWF)
         active_elms = self.get_active_for_loc(Location.ELM)
         active_rdis = self.get_active_for_loc(Location.RDI)
@@ -258,15 +267,15 @@ class WorldBot:
 
 
         return f"""
-[b]Active[/b] (unknown, [color=blue]beaming[/color], [color=green]>3 mins[/color], [color=red]<3mins[/color]):
-[b]DWF[/b]: {active_dwfs}
-[b]ELM[/b]: {active_elms}
-[b]RDI[/b]: {active_rdis}
-[b]UNK[/b]: {active_unks}
+**Active** (unknown, *beaming*, __>3 mins__, ~~<3mins~~):
+**DWF**: {active_dwfs}
+**ELM**: {active_elms}
+**RDI**: {active_rdis}
+**UNK**: {active_unks}
 
-[b]Dead[/b]: {dead_str}
+**Dead**: {dead_str}
 
-[b]Summary of active worlds (world / location / tents / time remaining / remarks)[/b]
+**Summary of active worlds (world / location / tents / time remaining / remarks)**
 {all_active_str}
 """
 
@@ -427,22 +436,27 @@ class WorldBot:
         # print(f'Updating: {world_num}, {loc}, {state}, {tents}, {time}, {notes}')
         self.update_world(world_num, loc, state, tents, time, notes)
 
-    def on_notify_msg(self, msgtxt, targetmode, senderid, sendername):
+    def on_notify_msg(self, msgtxt, ispublic, author):
         try:
             cmd = msgtxt.strip().lower()
             if cmd == '.help':
                 return self.get_help_info()
+
             elif cmd == 'list':
                 self.update_world_states()
                 return self.get_current_status()
+
             elif cmd == '.debug':
                 self.update_world_states()
                 return self.get_debug_info()
 
+            elif cmd.startswith('.version'):
+                return f'Bot version v{VERSION}. Written by CraftyElk :D'
+
             elif cmd.startswith('.reset'):
                 # Ensure permissions
-                if targetmode != ts3shim.TARGETMODE_PRIVATE:
-                    return 'You can only reset in PMs with the correct password'
+                if ispublic:
+                    return 'You can only reset in DMs with the correct password'
 
                 toks = [s.strip() for s in cmd.split(' ')]
                 if len(toks) < 2:
@@ -453,6 +467,7 @@ class WorldBot:
                     return 'Invalid password'
 
                 self.reset_worlds()
+                self._fcname = DEFAULT_FC
                 return 'Worlds successfully reset'
 
             # Bot crashed, have to restart
@@ -465,21 +480,24 @@ class WorldBot:
                     if l[0].isnumeric():
                         self.parse_update_command(l)
 
+            elif 'fc' in cmd and '?' in cmd:
+                return f'Using FC: "{self._fcname}"'
+
             # Automated fc query
             elif cmd.startswith('.fc'):
-                fcname = cmd[len('.fc '):]
-                self._fcname = fcname
-
-            elif 'fc?' in cmd or 'fcs?' in cmd:
-                return f'Using FC: {self._fcname}'
-
+                fcname = cmd[len('.fc '):].strip()
+                if len(fcname) == 0:
+                    return 'Please specify a valid FC name'
+                else:
+                    self._fcname = fcname
+                    return f'Setting FC to: "{fcname}"'
 
             # Implement original worldbot commands
             elif 'cpkwinsagain' in cmd:
-                return sendername + ' you should STFU!'
+                return author + ' you should STFU!'
 
             else:
-                for k,v in ORIGINAL_EASTER_EGGS.items():
+                for k,v in EASTER_EGGS.items():
                     if k in cmd:
                         return v
                 self.parse_update_command(cmd)
