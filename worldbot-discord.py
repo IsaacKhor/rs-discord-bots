@@ -11,7 +11,7 @@ BOT_LOG = 804209525585608734
 conn = aiohttp.TCPConnector(ssl=False)
 client = discord.Client(connector = conn)
 bot = worldbot.WorldBot()
-msglog = open('messages.log', 'a')
+msglog = open('messages.log', 'a', encoding='utf-8')
 
 def get_channel(id):
     return client.get_channel(id)

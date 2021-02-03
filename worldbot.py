@@ -220,7 +220,7 @@ class WorldBot:
 
     def get_world(self, num):
         if num not in P2P_WORLDS:
-            raise ValueError('{} world is not valid'.format(num))
+            raise InvalidWorldErr(num)
         return self._registry[num]
 
     def get_worlds(self):
