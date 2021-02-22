@@ -496,12 +496,12 @@ class WorldBot:
                     return f'Setting FC to: "{fcname}"'
 
             # Maintain list of self-reported anti
+            elif cmd.startswith('.anticheck'):
+                return 'Anti list:\n' + '\n'.join(self._antilist)
+
             elif cmd.startswith('.anti'):
                 self._antilist.add(author)
                 return f'Adding {author} to anti list'
-
-            elif cmd.startswith('.anticheck'):
-                return 'Anti list:\n' + '\n'.join(self._antilist)
 
             # Implement original worldbot commands
             elif 'cpkwinsagain' in cmd:
