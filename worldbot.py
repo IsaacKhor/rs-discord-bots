@@ -216,6 +216,7 @@ class WorldBot:
     def __init__(self):
         self._registry = None
         self._fcname = DEFAULT_FC
+        self._antilist = set()
         self.reset_worlds()
 
     def get_world(self, num):
@@ -228,6 +229,7 @@ class WorldBot:
 
     def reset_worlds(self):
         self._fcname = DEFAULT_FC
+        self._antilist = set()
         self._registry = dict()
         for num in P2P_WORLDS:
             self._registry[num] = World(num)
@@ -468,6 +470,7 @@ class WorldBot:
 
                 self.reset_worlds()
                 self._fcname = DEFAULT_FC
+                self._antilist = set()
                 return 'Worlds successfully reset'
 
             # Bot crashed, have to restart
@@ -491,6 +494,14 @@ class WorldBot:
                 else:
                     self._fcname = fcname
                     return f'Setting FC to: "{fcname}"'
+
+            # Maintain list of self-reported anti
+            elif cmd.startswith('.anti'):
+                self._antilist.add(author)
+                return f'Adding {author} to anti list'
+
+            elif cmd.startswith('.anticheck'):
+                return 'Anti list:\n' + '\n'.join(self._antilist)
 
             # Implement original worldbot commands
             elif 'cpkwinsagain' in cmd:
