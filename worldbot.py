@@ -2,7 +2,7 @@ import time, sys, string, re, datetime, functools, pprint, traceback
 import ts3shim
 from enum import Enum, auto
 
-VERSION = '3.0.0'
+VERSION = '3.0.1'
 NUM_PAT = re.compile(r'^(\d+)')
 DEFAULT_FC = 'Wbs United'
 P2P_WORLDS = [
@@ -213,11 +213,7 @@ class World():
 
 class WorldBot:
     def __init__(self):
-        self._registry = None
-        self._fcname = DEFAULT_FC
-        self._antilist = set()
-        self._scoutlist = set()
-        self.reset_worlds()
+        self.reset_state()
 
     def get_world(self, num):
         if num not in P2P_WORLDS:
@@ -227,12 +223,15 @@ class WorldBot:
     def get_worlds(self):
         return self._registry.values()
 
-    def reset_worlds(self):
+    def reset_state(self):
+        self._registry = dict()
         self._fcname = DEFAULT_FC
+        self._antilist = set()
+        self._scoutlist = set()
+        self._backup = dict()
+
         for num in P2P_WORLDS:
             self._registry[num] = World(num)
-
-        return self._registry
 
     def update_world(self, num, loc, state, tents, time, notes):
         world = self.get_world(num)
@@ -458,10 +457,7 @@ class WorldBot:
                 scoutstr = ', '.join(sorted(self._scoutlist))
                 ret = f'Wave summary:\nAnti:{antistr}\nScouts:{scoutstr}'
 
-                self.reset_worlds()
-                self._fcname = DEFAULT_FC
-                self._antilist = set()
-                self._scoutlist = set()
+                self.reset_state()
                 return ret
 
             elif 'fc' in cmd and '?' in cmd:
