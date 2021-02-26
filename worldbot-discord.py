@@ -19,7 +19,7 @@ def get_channel(id):
 @client.event
 async def on_ready():
     print('Logged is as {}'.format(client.user))
-    await get_channel(BOT_LOG).send('Bot starting up')
+    await get_channel(BOT_LOG).send(f'Bot starting up.\nVersion {worldbot.VERSION} loaded.')
 
 @client.event
 async def on_message(msgobj):
