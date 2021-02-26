@@ -2,8 +2,7 @@ import time, sys, string, re, datetime, functools, pprint, traceback
 import ts3shim
 from enum import Enum, auto
 
-VERSION = '2.0.0'
-RESET_PASSWORD = 'pewpew'
+VERSION = '3.0.0'
 NUM_PAT = re.compile(r'^(\d+)')
 DEFAULT_FC = 'Wbs United'
 P2P_WORLDS = [
@@ -217,6 +216,7 @@ class WorldBot:
         self._registry = None
         self._fcname = DEFAULT_FC
         self._antilist = set()
+        self._scoutlist = set()
         self.reset_worlds()
 
     def get_world(self, num):
@@ -229,8 +229,6 @@ class WorldBot:
 
     def reset_worlds(self):
         self._fcname = DEFAULT_FC
-        self._antilist = set()
-        self._registry = dict()
         for num in P2P_WORLDS:
             self._registry[num] = World(num)
 
@@ -456,32 +454,15 @@ class WorldBot:
                 return f'Bot version v{VERSION}. Written by CraftyElk :D'
 
             elif cmd.startswith('.reset'):
-                # Ensure permissions
-                if ispublic:
-                    return 'You can only reset in DMs with the correct password'
-
-                toks = [s.strip() for s in cmd.split(' ')]
-                if len(toks) < 2:
-                    return 'Password required'
-
-                password = toks[1]
-                if password != RESET_PASSWORD:
-                    return 'Invalid password'
+                antistr = ', '.join(sorted(self._antilist))
+                scoutstr = ', '.join(sorted(self._scoutlist))
+                ret = f'Wave summary:\nAnti:{antistr}\nScouts:{scoutstr}'
 
                 self.reset_worlds()
                 self._fcname = DEFAULT_FC
                 self._antilist = set()
-                return 'Worlds successfully reset'
-
-            # Bot crashed, have to restart
-            elif cmd.startswith('.reload'):
-                cmd = cmd[len('.reload '):]
-                lns = cmd.split('\n')
-                for l in lns:
-                    i = l.find(':', 10)
-                    l = l[i+2:]
-                    if l[0].isnumeric():
-                        self.parse_update_command(l)
+                self._scoutlist = set()
+                return ret
 
             elif 'fc' in cmd and '?' in cmd:
                 return f'Using FC: "{self._fcname}"'
@@ -495,13 +476,13 @@ class WorldBot:
                     self._fcname = fcname
                     return f'Setting FC to: "{fcname}"'
 
-            # Maintain list of self-reported anti
-            elif cmd.startswith('.anticheck'):
-                return 'Anti list:\n' + '\n'.join(self._antilist)
-
             elif cmd.startswith('.anti'):
                 self._antilist.add(author)
                 return f'Adding {author} to anti list'
+
+            elif cmd.startwith('.scout'):
+                self._scoutlist.add(author)
+                return f'Adding {author} to scout list'
 
             # Implement original worldbot commands
             elif 'cpkwinsagain' in cmd:
