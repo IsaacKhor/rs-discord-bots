@@ -476,7 +476,7 @@ class WorldBot:
                 self._antilist.add(author)
                 return f'Adding {author} to anti list'
 
-            elif cmd.startwith('.scout'):
+            elif cmd.startswith('.scout'):
                 self._scoutlist.add(author)
                 return f'Adding {author} to scout list'
 
