@@ -6,14 +6,17 @@ import aiohttp
 import json
 import atexit
 
-TIERS = ['low', 'med', 'high']
+TIERS = ['low', 'high']
 
-def list_tostr(lst):
+def list_tostr(lst, include_numbers=False):
 	if len(lst) == 0:
 		return 'None available'
 	s = ''
 	for i in range(len(lst)):
-		s += f'{i}: {lst[i]}\n'
+		if include_numbers:
+			s += f'{i}: {lst[i]}'
+		else:
+			s += f'{lst[i]}\n'
 	return s
 
 
@@ -22,11 +25,10 @@ class TierBot(object):
 	# they're fucked anyways because I'm too lazy
 	def __init__(self):
 		self.low = []
-		self.med = []
 		self.high = []
 
 	def to_file(self, path):
-		l = [self.low, self.med, self.high]
+		l = [self.low, self.high]
 		with open(path, 'w') as f:
 			json.dump(l, f)
 
@@ -37,16 +39,12 @@ class TierBot(object):
 			except json.decoder.JSONDecodeError:
 				l = []
 		# Only continue loading if file is well-defined
-		if len(l) == 3:
+		if len(l) == 2:
 			self.low = l[0]
-			self.med = l[1]
-			self.high = l[2]
+			self.high = l[1]
 
 	def get_low_str(self):
 		return list_tostr(self.low)
-
-	def get_med_str(self):
-		return list_tostr(self.med)
 
 	def get_high_str(self):
 		return list_tostr(self.high)
@@ -55,15 +53,13 @@ class TierBot(object):
 		tier = tier.strip().lower()
 		if tier == 'low':
 			return self.low
-		elif tier == 'med' or tier == 'mid':
-			return self.med
 		elif tier == 'high':
 			return self.high
 		else:
 			return None
 
 	def __str__(self):
-		return str(self.low) + str(self.med) + str(self.high)
+		return str(self.low) + str(self.high)
 
 
 conn = aiohttp.TCPConnector(ssl=False)
@@ -88,10 +84,12 @@ async def on_ready():
 
 @client.listen('on_command_error')
 async def on_command_error(ctx, err):
-    await ctx.send(f'{type(err)}\n {str(err)}')
+	if type(err) == discord.ext.commands.errors.CommandNotFound:
+		return
+	print(f'{type(err)}\n{str(err)}')
 
 # Channel IDs
-MESSAGE_CHANNEL = 770518655511429150
+MESSAGE_CHANNEL = 770189011045974040
 EDIT_CHANNEL = 790703022023376916
 
 # Role IDs
@@ -100,20 +98,77 @@ ROLE_EDITOR = 770192180936441867
 ROLE_OWNER = 770191914279370753
 EDIT_ROLES = [ROLE_ADMIN, ROLE_OWNER, ROLE_EDITOR]
 ROLE_HIGH = 790701293353172993
-ROLE_MED = 790701504402554940
 ROLE_LOW = 790701649895096352
+
+
+def process_txt(txt):
+	if txt == '!high' or txt == '$high':
+		return 'High tier names:\n' + list_tostr(tierbot.high)
+	elif txt == '!low' or txt == '$low':
+		return 'Low tier names:\n' + list_tostr(tierbot.low)
+	else:
+		return f'Invalid command: "{txt}". Please double check your spelling.'
 
 
 @client.listen('on_message')
 async def process_msg(msg):
-	if msg.channel.id == MESSAGE_CHANNEL or msg.channel.id == EDIT_CHANNEL:
-		roles = msg.raw_role_mentions
-		if ROLE_HIGH in roles:
-			await msg.channel.send(tierbot.get_high_str())
-		elif ROLE_MED in roles:
-			await msg.channel.send(tierbot.get_med_str())
-		elif ROLE_LOW in roles:
-			await msg.channel.send(tierbot.get_low_str())
+	if msg.channel.id == MESSAGE_CHANNEL:
+		txt = msg.content.strip().lower()
+		ret = process_txt(txt)
+		await msg.author.send(ret)
+		await msg.delete()
+
+		if any(r in EDIT_ROLES for r in msg.author.roles):
+			await msg.delete()
+
+
+@client.command(
+	name='helpmsg',
+	help='Prints out the pretty help message')
+@commands.check_any(
+	commands.has_role(ROLE_ADMIN),
+	commands.has_role(ROLE_EDITOR),
+	commands.has_role(ROLE_OWNER) )
+async def helpmsg(ctx):
+	await ctx.send(
+f'''> Hello! Remember to enable DMs from server 
+> members, as that's how the bot will send you 
+> the name lists.
+> 
+> For more impormation, contact
+> DM: Soph#9090 (Capital S)
+> UID: 220055946506928128
+> 
+> Remember to verify the UID of the seller
+> before any transaction. There have been multiple
+> reports of scammers impersonating sellers and
+> running with the money, so please make sure
+> that you're contacting the right person.
+> 
+> __**Commands**__:
+> **!low** - low tier names
+> **!high** - high tier names
+> 
+> Once you type your command in this channel it
+> will be automatically deleted and the bot will
+> DM you with the response.
+''')
+
+
+def is_edit_channel(ctx):
+	return ctx.channel.id == EDIT_CHANNEL
+
+
+@client.command(
+	name='adminlist',
+	help='List but with numbers so admins know which to delete')
+@commands.check_any(
+	commands.has_role(ROLE_ADMIN),
+	commands.has_role(ROLE_EDITOR),
+	commands.has_role(ROLE_OWNER),
+	commands.check(is_edit_channel))
+async def adminlist(ctx):
+	return f'High:\n{list_tostr(tierbot.high)}\n\nLow:{list_tostr(tierbot.low)}'
 
 
 @client.command(
@@ -122,7 +177,9 @@ async def process_msg(msg):
 @commands.check_any(
 	commands.has_role(ROLE_ADMIN),
 	commands.has_role(ROLE_EDITOR),
-	commands.has_role(ROLE_OWNER) )
+	commands.has_role(ROLE_OWNER),
+	commands.check(is_edit_channel))
+@commands.max_concurrency(1, wait=True)
 async def add_to_tier(ctx, tier, *, items):
 	lst = tierbot.get_lst(tier)
 	if lst == None:
@@ -141,7 +198,8 @@ async def add_to_tier(ctx, tier, *, items):
 @commands.check_any(
 	commands.has_role(ROLE_ADMIN),
 	commands.has_role(ROLE_EDITOR),
-	commands.has_role(ROLE_OWNER) )
+	commands.has_role(ROLE_OWNER),
+	commands.check(is_edit_channel))
 @commands.max_concurrency(1, wait=True)
 async def remove_from_tier(ctx, tier, *, item):
 	lst = tierbot.get_lst(tier)
@@ -168,30 +226,12 @@ async def remove_from_tier(ctx, tier, *, item):
 	await ctx.send(f'Removed from {tier}: {to_be_removed}')
 
 
-@client.command(
-	name='high',
-	aliases=['top'],
-	help='High tier names')
-async def list_high(ctx):
-	await ctx.send(tierbot.get_high_str())
-
-
-@client.command(
-	name='med',
-	aliases=['medium', 'mid'],
-	help='Medium tier names')
-async def list_high(ctx):
-	await ctx.send(tierbot.get_med_str())
-
-
-@client.command(
-	name='low',
-	help='Low tier names')
-async def list_high(ctx):
-	await ctx.send(tierbot.get_low_str())
-
-
 @client.command(name='debug', help='list debug info')
+@commands.check_any(
+	commands.has_role(ROLE_ADMIN),
+	commands.has_role(ROLE_EDITOR),
+	commands.has_role(ROLE_OWNER),
+	commands.check(is_edit_channel))
 async def get_state(ctx):
     await ctx.send(str(tierbot))
 
