@@ -2,7 +2,7 @@ import time, sys, string, re, datetime, functools, pprint, traceback
 import ts3shim
 from enum import Enum, auto
 
-VERSION = '3.0.2'
+VERSION = '3.1.0'
 NUM_PAT = re.compile(r'^(\d+)')
 DEFAULT_FC = 'Wbs United'
 P2P_WORLDS = [
@@ -43,12 +43,15 @@ Worldbot instructions:
 - **list** - lists summary of current status
 - **.help** - show this help message
 - **.debug** - show debug information
-- **.reload** - paste multiple lines from TS to re-parse
+- **.version** - shows the current version of the bot
+
+**Wave management commands** - keep track of people
+- **.host** - set yourself as host
+- **.scout** - add yourself to the list of scouts
+- **.anti** - add yourself to the list of anti
+- **.reset** - reset bot for next wave.
 - **.fc <fcname>** - sets active fc
 - **fc?** - shows current fc set by '.fc'
-
-**Priveledged commands**:
-- **.reset** - reset bot for next wave. Requires a password.
 
 **Scouting commands** - The bot accepts any commands starting with a number
 followed by any of the following (spaces are optional for each command):
@@ -76,6 +79,9 @@ Further notes:
   means '10elmhcf7m' is just as valid as '10 elm hcf 7m'.
 - For all time inputs the colon and seconds part is optional. For example,
   both '7' and '7:15' are both perfectly valid times, but not '715'.
+
+**Misc**
+- There are a bunch of easter eggs if you know the old bot. Why don't you try some of them?
 """
 
 class WorldState(Enum):
@@ -226,6 +232,7 @@ class WorldBot:
     def reset_state(self):
         self._registry = dict()
         self._fcname = DEFAULT_FC
+        self._host = ''
         self._antilist = set()
         self._scoutlist = set()
         self._backup = dict()
@@ -455,7 +462,7 @@ class WorldBot:
             elif cmd.startswith('.reset'):
                 antistr = ', '.join(sorted(self._antilist))
                 scoutstr = ', '.join(sorted(self._scoutlist))
-                ret = f'Wave summary:\nAnti:{antistr}\nScouts:{scoutstr}'
+                ret = f'Wave summary:\nHost: {self._host}\nAnti: {antistr}\nScouts: {scoutstr}'
 
                 self.reset_state()
                 return ret
@@ -471,6 +478,10 @@ class WorldBot:
                 else:
                     self._fcname = fcname
                     return f'Setting FC to: "{fcname}"'
+
+            elif cmd.startswith('.host'):
+                self._host = author
+                return f'Setting host to: {author}'
 
             elif cmd.startswith('.anti'):
                 self._antilist.add(author)
