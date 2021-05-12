@@ -1,7 +1,7 @@
 import time, sys, string, re, datetime, functools, pprint, traceback, inspect
 from enum import Enum, auto
 
-VERSION = '3.2.0'
+VERSION = '3.2.1'
 NUM_PAT = re.compile(r'^(\d+)')
 DEFAULT_FC = 'Wbs United'
 P2P_WORLDS = [
@@ -67,7 +67,7 @@ followed by any of the following (spaces are optional for each command):
 - **'xx:xxm'** m is short for mins
 - **'xx:xx'** if 'gc' or 'mins' is not specified its assumed to be gameclock
 
-So for example:
+Examples:
 - '119dwf 10gc' marks world as dying in 10\\*0.6=6 minutes
 - '119 mhs 4:30mins' marks the world as dying in 4:30 minutes
 - '119 mhs 4m' marks the world as dying in 4 minutes
@@ -274,18 +274,19 @@ class WorldBot:
         all_active_str = '\n'.join([w.get_line_summary() for w in all_active])
 
 
-        return f"""
-**Active** (unknown, *beaming*, __>3 mins__, ~~<3mins~~):
-**DWF**: {active_dwfs}
-**ELM**: {active_elms}
-**RDI**: {active_rdis}
-**UNK**: {active_unks}
+        ret = inspect.cleandoc(f"""
+        **Active** (unknown, *beaming*, __>3 mins__, ~~<3mins~~):
+        **DWF**: {active_dwfs}
+        **ELM**: {active_elms}
+        **RDI**: {active_rdis}
+        **UNK**: {active_unks}
+        **Dead**: {dead_str}
+        """)
 
-**Dead**: {dead_str}
+        if all_active_str:
+            ret += '\n\n{all_active_str}'
 
-**Summary of active worlds (world / location / tents / time remaining / remarks)**
-{all_active_str}
-"""
+        return ret
 
     def get_debug_info(self):
         return pprint.pformat(self._registry)
