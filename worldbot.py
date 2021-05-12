@@ -1,8 +1,7 @@
-import time, sys, string, re, datetime, functools, pprint, traceback
-import ts3shim
+import time, sys, string, re, datetime, functools, pprint, traceback, inspect
 from enum import Enum, auto
 
-VERSION = '3.1.0'
+VERSION = '3.2.0'
 NUM_PAT = re.compile(r'^(\d+)')
 DEFAULT_FC = 'Wbs United'
 P2P_WORLDS = [
@@ -49,9 +48,10 @@ Worldbot instructions:
 - **.host** - set yourself as host
 - **.scout** - add yourself to the list of scouts
 - **.anti** - add yourself to the list of anti
-- **.reset** - reset bot for next wave.
+- **.reset** - reset bot for next wave. Also produces the wave summary
 - **.fc <fcname>** - sets active fc
 - **fc?** - shows current fc set by '.fc'
+- **.call <world loc>** - adds <world loc> to the call history.
 
 **Scouting commands** - The bot accepts any commands starting with a number
 followed by any of the following (spaces are optional for each command):
@@ -73,6 +73,7 @@ So for example:
 - '119 mhs 4m' marks the world as dying in 4 minutes
 - '28 dead'
 - '84 beamed02 hcf clear', you can combine multiple commands
+- '.call 10 dwf hcf' will add '10 dwf hcf' to the call history
 
 Further notes:
 - Spaces are optional between different information to update a world. That
@@ -236,6 +237,7 @@ class WorldBot:
         self._antilist = set()
         self._scoutlist = set()
         self._backup = dict()
+        self._worldhist = list()
 
         for num in P2P_WORLDS:
             self._registry[num] = World(num)
@@ -462,10 +464,18 @@ class WorldBot:
             elif cmd.startswith('.reset'):
                 antistr = ', '.join(sorted(self._antilist))
                 scoutstr = ', '.join(sorted(self._scoutlist))
-                ret = f'Wave summary:\nHost: {self._host}\nAnti: {antistr}\nScouts: {scoutstr}'
+                callhist = ', '.join(self._worldhist)
+                ret = f"""
+                Wave summary:
+
+                Host: {self._host}
+                Scouts: {scoutstr}
+                Anti: {antistr}
+                Worlds: {callhist}
+                """
 
                 self.reset_state()
-                return ret
+                return inspect.cleandoc(ret)
 
             elif 'fc' in cmd and '?' in cmd:
                 return f'Using FC: "{self._fcname}"'
@@ -490,6 +500,11 @@ class WorldBot:
             elif cmd.startswith('.scout'):
                 self._scoutlist.add(author)
                 return f'Adding {author} to scout list'
+
+            elif cmd.startswith('.call'):
+                call = cmd[len('.call'):].strip()
+                self._worldhist.append(call)
+                return f'Adding "{call}" to call history'
 
             # Implement original worldbot commands
             elif 'cpkwinsagain' in cmd:
