@@ -1,7 +1,7 @@
 import time, sys, string, re, datetime, functools, pprint, traceback, inspect
 from enum import Enum, auto
 
-VERSION = '3.2.1'
+VERSION = '3.2.2'
 NUM_PAT = re.compile(r'^(\d+)')
 DEFAULT_FC = 'Wbs United'
 P2P_WORLDS = [
@@ -284,7 +284,7 @@ class WorldBot:
         """)
 
         if all_active_str:
-            ret += '\n\n{all_active_str}'
+            ret += f'\n\n{all_active_str}'
 
         return ret
 
