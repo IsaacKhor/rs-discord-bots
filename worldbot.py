@@ -1,9 +1,8 @@
-import time, sys, string, re, functools, pprint, traceback, inspect, math
+import time, sys, string, re, functools, pprint, traceback, inspect, math, pytz
 from datetime import datetime, timezone, timedelta
-from zoneinfo import ZoneInfo
 from enum import Enum, auto
 
-VERSION = '3.3.0'
+VERSION = '3.3.1'
 NUM_PAT = re.compile(r'^(\d+)')
 DEFAULT_FC = 'Wbs United'
 P2P_WORLDS = [
@@ -129,7 +128,7 @@ def next_wave_info():
     n = next_wave
 
     def intz(time, zonename):
-        return time.astimezone(ZoneInfo(zonename)).strftime(TIME_FORMAT)
+        return time.astimezone(pytz.timezone(zonename)).strftime(TIME_FORMAT)
 
     return inspect.cleandoc(
         f"""
@@ -138,7 +137,7 @@ def next_wave_info():
         Next wave is at:
         {intz(n, 'US/Eastern')} in US/Eastern
         {intz(n, 'US/Central')} in US/Central
-        {intz(n, 'US/Pacific')} in US/Eastern
+        {intz(n, 'US/Pacific')} in US/Pacific
         {intz(n, 'Europe/Paris')} in EU/Central
         {intz(n, 'Europe/Sofia')} in EU/Eastern
         {intz(n, 'Europe/London')} in UK
