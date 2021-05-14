@@ -2,6 +2,8 @@
 
 import discord
 import aiohttp
+import atexit
+
 import worldbot
 
 BOT_CHANNEL = 803855255933681664
@@ -14,6 +16,10 @@ client = discord.Client(connector = conn)
 bot = worldbot.WorldBot()
 msglog = open('messages.log', 'a', encoding='utf-8')
 
+@atexit.register
+def save_state():
+    bot.save_state()
+
 def get_channel(id):
     return client.get_channel(id)
 
@@ -25,7 +31,7 @@ async def on_ready():
 @client.event
 async def on_message(msgobj):
     # Don't respond to our own messages
-    if message.author == client.user:
+    if msgobj.author == client.user or msgobj.author.display_name == 'worldbot':
         return
 
     ispublic = isinstance(msgobj.channel, discord.TextChannel)

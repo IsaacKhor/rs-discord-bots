@@ -1,8 +1,9 @@
-import time, sys, string, re, functools, pprint, traceback, inspect, math, pytz
+import time, sys, string, re, functools, pprint
+import traceback, inspect, math, pytz, os, json
 from datetime import datetime, timezone, timedelta
 from enum import Enum, auto
 
-VERSION = '3.3.2'
+VERSION = '3.4.0'
 NUM_PAT = re.compile(r'^(\d+)')
 DEFAULT_FC = 'Wbs United'
 P2P_WORLDS = [
@@ -142,6 +143,7 @@ def next_wave_info():
         {intz(n, 'Europe/Sofia')} in EU/Eastern
         {intz(n, 'Europe/London')} in UK
         {intz(n, 'Singapore')} in UTC+8
+        {intz(n, 'Australia/Melbourne')} in Australia/Eastern
         """)
 
 
@@ -278,17 +280,16 @@ class World():
                 self.notes == None)
 
 
+SAVEFILE = './worldbot-state.json'
+DEFAULT = {
+    'upvotes': 0,
+    'downvotes': 0,
+}
+
 class WorldBot:
     def __init__(self):
         self.reset_state()
-
-    def get_world(self, num):
-        if num not in P2P_WORLDS:
-            raise InvalidWorldErr(num)
-        return self._registry[num]
-
-    def get_worlds(self):
-        return self._registry.values()
+        self.load_state()
 
     def reset_state(self):
         self._registry = dict()
@@ -298,6 +299,37 @@ class WorldBot:
         self._scoutlist = set()
         self._backup = dict()
         self._worldhist = list()
+
+    def load_state(self):
+        # Make sure file exists
+        if not os.path.exists(SAVEFILE):
+            with open(SAVEFILE, 'w') as f:
+                json.dump(DEFAULT, f)
+
+        with open(SAVEFILE, 'r') as f:
+            try:
+                m = json.load(f)
+            except json.decoder.JSONDecodeError:
+                m = DEFAULT
+
+        self._upvotes = m['upvotes']
+        self._downvotes = m['upvotes']
+
+    def save_state(self):
+        m = {'upvotes': self._upvotes, 'downvotes': self._downvotes}
+        with open(SAVEFILE, 'w') as f:
+            json.dump(DEFAULT, f)
+
+    def get_votes_summary(self):
+        return f'Upvotes: {self._upvotes}, Downvotes: {self._downvotes}'
+
+    def get_world(self, num):
+        if num not in P2P_WORLDS:
+            raise InvalidWorldErr(num)
+        return self._registry[num]
+
+    def get_worlds(self):
+        return self._registry.values()
 
         for num in P2P_WORLDS:
             self._registry[num] = World(num)
@@ -569,6 +601,14 @@ class WorldBot:
 
             elif cmd.startswith('.wbs'):
                 return next_wave_info()
+
+            elif 'good bot' in cmd or 'goodbot' in cmd:
+                self._upvotes += 1
+                return f'Thank you :D\n{self.get_votes_summary()}'
+
+            elif 'bad bot' in cmd or 'badbot' in cmd:
+                self._downvotes += 1
+                return f':( *cries*\n{self.get_votes_summary()}'
 
             # Implement original worldbot commands
             elif 'cpkwinsagain' in cmd:
