@@ -5,7 +5,7 @@ import aiohttp
 import worldbot
 
 BOT_CHANNEL = 803855255933681664
-VOICE_CHANNEL = 780814756713594951 
+VOICE_CHANNEL = 780814756713594951
 BOT_LOG = 804209525585608734
 
 conn = aiohttp.TCPConnector(ssl=False)
@@ -35,7 +35,12 @@ async def on_message(msgobj):
 
     response = bot.on_notify_msg(text, ispublic, author)
     if response:
-        await msgobj.channel.send(response)
+        if type(response) is str:
+            await msgobj.channel.send(response)
+        elif type(response) is list:
+            for s in response:
+                await msgobj.channel.send(response)
+
 
 @client.event
 async def on_voice_state_update(member, before, after):

@@ -1,7 +1,7 @@
 import time, sys, string, re, datetime, functools, pprint, traceback, inspect
 from enum import Enum, auto
 
-VERSION = '3.2.2'
+VERSION = '3.2.3'
 NUM_PAT = re.compile(r'^(\d+)')
 DEFAULT_FC = 'Wbs United'
 P2P_WORLDS = [
@@ -35,8 +35,8 @@ EASTER_EGGS = {
     '.take': 'Not implemented. Feel free to scout whatever world you want'
 }
 
-HELP_STRING = """
-Worldbot instructions:
+HELP_STRING = ["""
+**Worldbot instructions:**
 
 **Commands**:
 - **list** - lists summary of current status
@@ -66,24 +66,25 @@ followed by any of the following (spaces are optional for each command):
 - **'xx:xx mins'** for xx:xx remaining in real time. The seconds part is optional
 - **'xx:xxm'** m is short for mins
 - **'xx:xx'** if 'gc' or 'mins' is not specified its assumed to be gameclock
-
+""" , """
 Examples:
-- '119dwf 10gc' marks world as dying in 10\\*0.6=6 minutes
-- '119 mhs 4:30mins' marks the world as dying in 4:30 minutes
-- '119 mhs 4m' marks the world as dying in 4 minutes
-- '28 dead'
-- '84 beamed02 hcf clear', you can combine multiple commands
-- '.call 10 dwf hcf' will add '10 dwf hcf' to the call history
+- `119dwf 10gc` marks world as dying in 10\\*0.6=6 minutes
+- `119 mhs 4:30mins` marks the world as dying in 4:30 minutes
+- `119 mhs 4m` marks the world as dying in 4 minutes
+- `28 dead`
+- `84 beamed02 hcf clear`, you can combine multiple commands
+- `.call 10 dwf hcf` will add '10 dwf hcf' to the call history
 
 Further notes:
 - Spaces are optional between different information to update a world. That
-  means '10elmhcf7m' is just as valid as '10 elm hcf 7m'.
+  means `10elmhcf7m` is just as valid as `10 elm hcf 7m`.
 - For all time inputs the colon and seconds part is optional. For example,
   both '7' and '7:15' are both perfectly valid times, but not '715'.
 
 **Misc**
 - There are a bunch of easter eggs if you know the old bot. Why don't you try some of them?
 """
+]
 
 class WorldState(Enum):
     NOINFO = 'uncalled'
