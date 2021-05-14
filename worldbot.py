@@ -2,7 +2,7 @@ import time, sys, string, re, functools, pprint, traceback, inspect, math, pytz
 from datetime import datetime, timezone, timedelta
 from enum import Enum, auto
 
-VERSION = '3.3.1'
+VERSION = '3.3.2'
 NUM_PAT = re.compile(r'^(\d+)')
 DEFAULT_FC = 'Wbs United'
 P2P_WORLDS = [

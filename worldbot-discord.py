@@ -7,6 +7,7 @@ import worldbot
 BOT_CHANNEL = 803855255933681664
 VOICE_CHANNEL = 780814756713594951
 BOT_LOG = 804209525585608734
+HELP_CHANNEL = 842186485200584754
 
 conn = aiohttp.TCPConnector(ssl=False)
 client = discord.Client(connector = conn)
@@ -23,9 +24,13 @@ async def on_ready():
 
 @client.event
 async def on_message(msgobj):
+    # Don't respond to our own messages
+    if message.author == client.user:
+        return
+
     ispublic = isinstance(msgobj.channel, discord.TextChannel)
 
-    if ispublic and msgobj.channel.id != BOT_CHANNEL:
+    if ispublic and not (msgobj.channel.id in [BOT_CHANNEL, HELP_CHANNEL]):
         return
 
     text = msgobj.content
