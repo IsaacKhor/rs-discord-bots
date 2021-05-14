@@ -1,7 +1,9 @@
-import time, sys, string, re, datetime, functools, pprint, traceback, inspect
+import time, sys, string, re, functools, pprint, traceback, inspect, math
+from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo
 from enum import Enum, auto
 
-VERSION = '3.2.3'
+VERSION = '3.3.0'
 NUM_PAT = re.compile(r'^(\d+)')
 DEFAULT_FC = 'Wbs United'
 P2P_WORLDS = [
@@ -43,6 +45,7 @@ HELP_STRING = ["""
 - **.help** - show this help message
 - **.debug** - show debug information
 - **.version** - shows the current version of the bot
+- **.wbs** - shows the time of the next wave
 
 **Wave management commands** - keep track of people
 - **.host** - set yourself as host
@@ -86,6 +89,63 @@ Further notes:
 """
 ]
 
+WBS_TIME_DB = {
+    0: [2, 9, 16, 23],
+    1: [6, 13, 20],
+    2: [3, 10, 17],
+    3: [0, 7, 14, 21],
+    4: [4, 11, 18],
+    5: [1, 8, 15, 22],
+    6: [5, 12, 19],
+}
+
+def next_wave_info():
+    cur = datetime.now(timezone.utc)
+    day = cur.weekday()
+    waves_today = WBS_TIME_DB[day]
+
+    next_wave = None
+
+    # Find the hour after the current one
+    for wh in waves_today:
+        actual_dt = cur.replace(hour=wh, minute=0, second=0, microsecond=0)
+        if actual_dt > cur:
+            next_wave = actual_dt
+            break
+
+    # Next wave is tomorrow since we didn't find an hour
+    if next_wave == None:
+        tmr_weekday = (day + 1) % 7
+        hr = WBS_TIME_DB[tmr_weekday][0]
+
+        tomorrow = cur + timedelta(days=1)
+        next_wave = tomorrow.replace(hour=hr, minute=0, second=0, microsecond=0)
+
+    deltasecs = (next_wave - cur).seconds
+    deltahr = math.floor(deltasecs / 3600.0)
+    deltamins = math.floor((deltasecs % 3600) / 60.0)
+
+    TIME_FORMAT = '%H:00'
+    n = next_wave
+
+    def intz(time, zonename):
+        return time.astimezone(ZoneInfo(zonename)).strftime(TIME_FORMAT)
+
+    return inspect.cleandoc(
+        f"""
+        {deltahr}:{deltamins} until the next wave.
+
+        Next wave is at:
+        {intz(n, 'US/Eastern')} in US/Eastern
+        {intz(n, 'US/Central')} in US/Central
+        {intz(n, 'US/Pacific')} in US/Eastern
+        {intz(n, 'Europe/Paris')} in EU/Central
+        {intz(n, 'Europe/Sofia')} in EU/Eastern
+        {intz(n, 'Europe/London')} in UK
+        {intz(n, 'Singapore')} in UTC+8
+        """)
+
+
 class WorldState(Enum):
     NOINFO = 'uncalled'
     BEAMING = 'beaming'
@@ -121,7 +181,7 @@ class InvalidWorldErr(Exception):
 class WbsTime():
     @staticmethod
     def current():
-        t = datetime.datetime.now().time()
+        t = datetime.now().time()
         return WbsTime(t.minute, t.second)
 
     @staticmethod
@@ -507,6 +567,9 @@ class WorldBot:
                 call = cmd[len('.call'):].strip()
                 self._worldhist.append(call)
                 return f'Adding "{call}" to call history'
+
+            elif cmd.startswith('.wbs'):
+                return next_wave_info()
 
             # Implement original worldbot commands
             elif 'cpkwinsagain' in cmd:
