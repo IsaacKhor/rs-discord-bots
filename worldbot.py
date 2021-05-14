@@ -3,7 +3,7 @@ import traceback, inspect, math, pytz, os, json
 from datetime import datetime, timezone, timedelta
 from enum import Enum, auto
 
-VERSION = '3.4.0'
+VERSION = '3.4.1'
 NUM_PAT = re.compile(r'^(\d+)')
 DEFAULT_FC = 'Wbs United'
 P2P_WORLDS = [
@@ -133,7 +133,7 @@ def next_wave_info():
 
     return inspect.cleandoc(
         f"""
-        {deltahr}:{deltamins} until the next wave.
+        {deltahr}:{deltamins:02} until the next wave.
 
         Next wave is at:
         {intz(n, 'US/Eastern')} in US/Eastern
