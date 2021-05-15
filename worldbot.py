@@ -3,7 +3,7 @@ import traceback, inspect, math, pytz, os, json
 from datetime import datetime, timezone, timedelta
 from enum import Enum, auto
 
-VERSION = '3.4.2'
+VERSION = '3.5.0'
 NUM_PAT = re.compile(r'^(\d+)')
 DEFAULT_FC = 'Wbs United'
 P2P_WORLDS = [
@@ -46,6 +46,7 @@ HELP_STRING = ["""
 - **.debug** - show debug information
 - **.version** - shows the current version of the bot
 - **.wbs** - shows the time of the next wave
+- **.ignoremode** - enter ignore mode. Ignores all messages.
 
 **Wave management commands** - keep track of people
 - **.host** - set yourself as host
@@ -55,7 +56,7 @@ HELP_STRING = ["""
 - **.fc <fcname>** - sets active fc
 - **fc?** - shows current fc set by '.fc'
 - **.call <world loc>** - adds <world loc> to the call history.
-
+""", """
 **Scouting commands** - The bot accepts any commands starting with a number
 followed by any of the following (spaces are optional for each command):
 - **'dwf|elm|rdi|unk'** will update the world to that location, 'unk' is unknown
@@ -299,6 +300,7 @@ class WorldBot:
         self._scoutlist = set()
         self._backup = dict()
         self._worldhist = list()
+        self._ignoremode = False
 
         for num in P2P_WORLDS:
             self._registry[num] = World(num)
@@ -543,7 +545,20 @@ class WorldBot:
     def on_notify_msg(self, msgtxt, ispublic, author):
         try:
             cmd = msgtxt.strip().lower()
-            if cmd == '.help':
+
+            # If we're in ignore mode, just ignore everything
+            # except for the command letting us out of it
+            if self._ignoremode:
+                if cmd == '.ignoremode disable':
+                    self._ignoremode = False
+                    return f'Returning to normal mode'
+                return
+
+            if cmd.startswith('.ignoremode'):
+                self._ignoremode = True
+                return f'Going into ignore mode. Use `.ignoremode disable` to get out.'
+
+            elif cmd == '.help':
                 return self.get_help_info()
 
             elif cmd == 'list':
