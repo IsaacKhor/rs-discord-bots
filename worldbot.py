@@ -3,7 +3,7 @@ import traceback, inspect, math, pytz, os, json
 from datetime import datetime, timezone, timedelta
 from enum import Enum, auto
 
-VERSION = '3.4.1'
+VERSION = '3.4.2'
 NUM_PAT = re.compile(r'^(\d+)')
 DEFAULT_FC = 'Wbs United'
 P2P_WORLDS = [
@@ -299,6 +299,9 @@ class WorldBot:
         self._scoutlist = set()
         self._backup = dict()
         self._worldhist = list()
+
+        for num in P2P_WORLDS:
+            self._registry[num] = World(num)
 
     def load_state(self):
         # Make sure file exists
