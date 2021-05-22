@@ -3,7 +3,7 @@ import traceback, inspect, math, pytz, os, json
 from datetime import datetime, timezone, timedelta
 from enum import Enum, auto
 
-VERSION = '3.6.0'
+VERSION = '3.6.1'
 NUM_PAT = re.compile(r'^(\d+)')
 DEFAULT_FC = 'Wbs United'
 P2P_WORLDS = [
@@ -652,8 +652,8 @@ class WorldBot:
             ret = ''
 
         time_since_last_reset = datetime.now() - self._lastreset
-        if time_since_last_reset.seconds > 3600:
-            ret = '__**WARN: >1hr since last reset**__\n\n' + ret
+        if time_since_last_reset.seconds > (3600 * 6):
+            ret = '__**WARN: >6hrs since last reset**__\n\n' + ret
 
         return ret
 
