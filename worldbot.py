@@ -3,7 +3,7 @@ import traceback, inspect, math, pytz, os, json
 from datetime import datetime, timezone, timedelta
 from enum import Enum, auto
 
-VERSION = '3.5.0'
+VERSION = '3.6.0'
 NUM_PAT = re.compile(r'^(\d+)')
 DEFAULT_FC = 'Wbs United'
 P2P_WORLDS = [
@@ -301,6 +301,7 @@ class WorldBot:
         self._backup = dict()
         self._worldhist = list()
         self._ignoremode = False
+        self._lastreset = datetime.now()
 
         for num in P2P_WORLDS:
             self._registry[num] = World(num)
@@ -542,7 +543,7 @@ class WorldBot:
         # print(f'Updating: {world_num}, {loc}, {state}, {tents}, {time}, {notes}')
         self.update_world(world_num, loc, state, tents, time, notes)
 
-    def on_notify_msg(self, msgtxt, ispublic, author):
+    def process_command(self, msgtxt, ispublic, author):
         try:
             cmd = msgtxt.strip().lower()
 
@@ -644,3 +645,15 @@ class WorldBot:
         except Exception as e:
             traceback.print_exc()
             return 'Error: ' + str(e) + '\n' + traceback.format_exc()
+
+    def on_notify_msg(self, msgtxt, ispublic, author):
+        ret = self.process_command(msgtxt, ispublic, author)
+        if not ret:
+            ret = ''
+
+        time_since_last_reset = datetime.now() - self._lastreset
+        if time_since_last_reset.seconds > 3600:
+            ret = '__**WARN: >1hr since last reset**__\n\n' + ret
+
+        return ret
+
