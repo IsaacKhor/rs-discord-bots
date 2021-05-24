@@ -3,7 +3,7 @@ import traceback, inspect, math, pytz, os, json
 from datetime import datetime, timezone, timedelta
 from enum import Enum, auto
 
-VERSION = '3.6.2'
+VERSION = '3.7.0'
 NUM_PAT = re.compile(r'^(\d+)')
 DEFAULT_FC = 'Wbs United'
 P2P_WORLDS = [
@@ -311,8 +311,6 @@ class WorldBot:
         self._worldhist = list()
 
         self._ignoremode = False
-        self._last_world_update = get_utctime()
-
         self._registry = dict()
 
         for num in P2P_WORLDS:
@@ -371,7 +369,6 @@ class WorldBot:
             world.notes = notes
 
         if loc or state or tents or time or notes:
-            self._last_world_update = get_utctime()
             return True
 
         return False
@@ -409,11 +406,28 @@ class WorldBot:
 
         return ret
 
+    def get_wave_summary(self):
+        antistr = ', '.join(sorted(self._antilist))
+        scoutstr = ', '.join(sorted(self._scoutlist))
+        callhist = ', '.join(self._worldhist)
+        ret = f"""
+        Wave summary:
+
+        Host: {self._host}
+        Scouts: {scoutstr}
+        Anti: {antistr}
+        Worlds: {callhist}
+        """
+        return inspect.cleandoc(ret)
+
     def get_debug_info(self):
         return pprint.pformat(self._registry)
 
     def get_help_info(self):
         return HELP_STRING
+
+    def is_registry_empty(self):
+        return not any(w for w in self._registry.values())
 
     def update_world_states(self):
         curtime = WbsTime.current()
@@ -597,20 +611,9 @@ class WorldBot:
                 return f'Bot version v{VERSION}. Written by CraftyElk :D'
 
             elif cmd.startswith('.reset'):
-                antistr = ', '.join(sorted(self._antilist))
-                scoutstr = ', '.join(sorted(self._scoutlist))
-                callhist = ', '.join(self._worldhist)
-                ret = f"""
-                Wave summary:
-
-                Host: {self._host}
-                Scouts: {scoutstr}
-                Anti: {antistr}
-                Worlds: {callhist}
-                """
-
+                summary = self.get_wave_summary()
                 self.reset_state()
-                return inspect.cleandoc(ret)
+                return summary
 
             elif 'fc' in cmd and '?' in cmd:
                 return f'Using FC: "{self._fcname}"'
@@ -661,21 +664,7 @@ class WorldBot:
                     if k in cmd:
                         return v
 
-                registry_empty = not any(w for w in self._registry.values())
-                ret = self.parse_update_command(cmd)
-
-                # Check if we should warn
-                # Criteria:
-                # 1. We actually updated a world
-                # 2. The registry was previously not empty
-                # 3. The last time we updated the regsistry was >1hr ago
-
-                now = get_utctime()
-                if ret and registry_empty and now - self._last_world_update > 3600:
-                    return inspect.cleandoc("""
-                    WARN: you might have forgotten to reset the bot.
-                    Reason: updating non-empty worldlist with previous update >1hr ago
-                    """)
+                self.parse_update_command(cmd)
 
         except InvalidWorldErr as e:
             return str(e)
