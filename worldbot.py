@@ -3,7 +3,7 @@ import traceback, inspect, math, pytz, os, json
 from datetime import datetime, timezone, timedelta
 from enum import Enum, auto
 
-VERSION = '3.6.1'
+VERSION = '3.6.2'
 NUM_PAT = re.compile(r'^(\d+)')
 DEFAULT_FC = 'Wbs United'
 P2P_WORLDS = [
@@ -100,8 +100,11 @@ WBS_TIME_DB = {
     6: [5, 12, 19],
 }
 
-def next_wave_info():
-    cur = datetime.now(timezone.utc)
+def get_utctime():
+    return datetime.now().astimezone(timezone.utc)
+
+def get_next_wave_datetime(current):
+    cur = current.astimezone(timezone.utc)
     day = cur.weekday()
     waves_today = WBS_TIME_DB[day]
 
@@ -111,8 +114,7 @@ def next_wave_info():
     for wh in waves_today:
         actual_dt = cur.replace(hour=wh, minute=0, second=0, microsecond=0)
         if actual_dt > cur:
-            next_wave = actual_dt
-            break
+            return actual_dt
 
     # Next wave is tomorrow since we didn't find an hour
     if next_wave == None:
@@ -120,7 +122,12 @@ def next_wave_info():
         hr = WBS_TIME_DB[tmr_weekday][0]
 
         tomorrow = cur + timedelta(days=1)
-        next_wave = tomorrow.replace(hour=hr, minute=0, second=0, microsecond=0)
+        return tomorrow.replace(hour=hr, minute=0, second=0, microsecond=0)
+
+
+def next_wave_info():
+    cur = get_utctime()
+    next_wave = get_next_wave_datetime(cur)
 
     deltasecs = (next_wave - cur).seconds
     deltahr = math.floor(deltasecs / 3600.0)
@@ -183,7 +190,7 @@ class InvalidWorldErr(Exception):
 class WbsTime():
     @staticmethod
     def current():
-        t = datetime.now().time()
+        t = datetime.utcnow().time()
         return WbsTime(t.minute, t.second)
 
     @staticmethod
@@ -245,6 +252,10 @@ class World():
     def __repr__(self):
         return self.__str__()
 
+    def __nonzero__(self):
+        return self.loc == Location.UNKNOWN and self.state == WorldState.NOINFO \
+            and self.tents == None and self.time == None and self.notes == None
+
     def get_remaining_time(self):
         if self.time == None:
             return -1
@@ -293,15 +304,16 @@ class WorldBot:
         self.load_state()
 
     def reset_state(self):
-        self._registry = dict()
         self._fcname = DEFAULT_FC
         self._host = ''
         self._antilist = set()
         self._scoutlist = set()
-        self._backup = dict()
         self._worldhist = list()
+
         self._ignoremode = False
-        self._lastreset = datetime.now()
+        self._last_world_update = get_utctime()
+
+        self._registry = dict()
 
         for num in P2P_WORLDS:
             self._registry[num] = World(num)
@@ -326,6 +338,9 @@ class WorldBot:
         with open(SAVEFILE, 'w') as f:
             json.dump(DEFAULT, f)
 
+    def get_worlds_with_info(self):
+        return [w for w in self._registry if w]
+
     def get_votes_summary(self):
         return f'Upvotes: {self._upvotes}, Downvotes: {self._downvotes}'
 
@@ -340,6 +355,8 @@ class WorldBot:
         for num in P2P_WORLDS:
             self._registry[num] = World(num)
 
+
+    # Return true iff we actually update something
     def update_world(self, num, loc, state, tents, time, notes):
         world = self.get_world(num)
         if loc:
@@ -352,6 +369,12 @@ class WorldBot:
             world.time = time
         if notes:
             world.notes = notes
+
+        if loc or state or tents or time or notes:
+            self._last_world_update = get_utctime()
+            return True
+
+        return False
 
     def get_active_for_loc(self, loc):
         return ','.join([w.get_num_summary() for w in self.get_worlds()
@@ -541,7 +564,7 @@ class WorldBot:
                 cmd = ''
 
         # print(f'Updating: {world_num}, {loc}, {state}, {tents}, {time}, {notes}')
-        self.update_world(world_num, loc, state, tents, time, notes)
+        return self.update_world(world_num, loc, state, tents, time, notes)
 
     def process_command(self, msgtxt, ispublic, author):
         try:
@@ -637,7 +660,22 @@ class WorldBot:
                 for k,v in EASTER_EGGS.items():
                     if k in cmd:
                         return v
-                self.parse_update_command(cmd)
+
+                registry_empty = not any(w for w in self._registry.values())
+                ret = self.parse_update_command(cmd)
+
+                # Check if we should warn
+                # Criteria:
+                # 1. We actually updated a world
+                # 2. The registry was previously not empty
+                # 3. The last time we updated the regsistry was >1hr ago
+
+                now = get_utctime()
+                if ret and registry_empty and now - self._last_world_update > 3600:
+                    return inspect.cleandoc("""
+                    WARN: you might have forgotten to reset the bot.
+                    Reason: updating non-empty worldlist with previous update >1hr ago
+                    """)
 
         except InvalidWorldErr as e:
             return str(e)
@@ -647,13 +685,5 @@ class WorldBot:
             return 'Error: ' + str(e) + '\n' + traceback.format_exc()
 
     def on_notify_msg(self, msgtxt, ispublic, author):
-        ret = self.process_command(msgtxt, ispublic, author)
-        if not ret:
-            ret = ''
-
-        time_since_last_reset = datetime.now() - self._lastreset
-        if time_since_last_reset.seconds > (3600 * 6):
-            ret = '__**WARN: >6hrs since last reset**__\n\n' + ret
-
-        return ret
+        return self.process_command(msgtxt, ispublic, author)
 
