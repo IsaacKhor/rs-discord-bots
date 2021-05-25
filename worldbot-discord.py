@@ -60,7 +60,7 @@ async def on_message(msgobj):
 @client.event
 async def on_voice_state_update(member, before, after):
     now = datetime.now().astimezone(timezone.utc)
-    nowf = now.strftime('%H-%M-%S')
+    nowf = now.strftime('%H:%M:%S')
 
     if (before.channel == None and
         after.channel and
@@ -90,17 +90,18 @@ async def delay_to_nextwave():
 
 # Auto reset 1hr after the wave
 async def autoreset_bot():
-    if bot.is_registry_empty():
-        summary = '\n' + bot.get_wave_summary()
-    else:
-        summary = ''
+    while not bot.is_closed(): # Loop
+        if bot.is_registry_empty():
+            summary = '\n' + bot.get_wave_summary()
+        else:
+            summary = ''
 
-    bot.reset_state()
-    msg = 'Auto reset triggered.' + summary
-    await get_channel(BOT_LOG).send(msg)
-    await get_channel(BOT_CHANNEL).send(msg)
+        bot.reset_state()
+        msg = 'Auto reset triggered.' + summary
+        await get_channel(BOT_LOG).send(msg)
+        await get_channel(BOT_CHANNEL).send(msg)
 
-    await delay_to_nextwave()
+        await delay_to_nextwave()
 
 import sys
 if len(sys.argv) < 2:
