@@ -1,6 +1,7 @@
 info.txt
 private.keys
 __pycache__/
+.vscode/
 
 messages.log
 api.log
