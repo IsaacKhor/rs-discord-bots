@@ -3,7 +3,7 @@ import traceback, inspect, math, pytz, os, json
 from datetime import datetime, timezone, timedelta
 from enum import Enum, auto
 
-VERSION = '3.8.0'
+VERSION = '3.8.1'
 NUM_PAT = re.compile(r'^(\d+)')
 DEFAULT_FC = 'Wbs United'
 P2P_WORLDS = [

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-import discord, aiohttp, atexit, asyncio
-import worldbot
+import discord, aiohttp, atexit, asyncio, os
 from datetime import datetime, timedelta, timezone
+import worldbot
 
 WBS_UNITED_ID = 261802377009561600
 
@@ -18,6 +18,8 @@ client = discord.Client(connector = conn)
 bot = worldbot.WorldBot()
 msglog = open('messages.log', 'a', encoding='utf-8')
 
+DEBUG = 'WORLDBOT_DEBUG' in os.environ
+
 def get_channel(id):
     return client.get_channel(id)
 
@@ -32,6 +34,8 @@ def save_state():
 async def on_ready():
     print('Logged is as {}'.format(client.user))
     greetmsg = f'Bot starting up.\nVersion {worldbot.VERSION} loaded.'
+    if DEBUG:
+        greetmsg += '\n DEBUG MODE ENABLED.'
     await send_to_channel(BOT_LOG, greetmsg)
 
     # Schedule the autoreset every hour after a wave
@@ -88,8 +92,9 @@ async def on_voice_state_update(member, before, after):
 
 # Gets the time of next wave and timedelta until that time. Must include
 # an offset
-def time_until_wave(offset):
-    now = datetime.now().astimezone(timezone.utc)
+def time_until_wave(offset, now=None):
+    if not now:
+        now = datetime.now().astimezone(timezone.utc)
     next_wave = worldbot.get_next_wave_datetime(now)
     offset_time = next_wave + offset
     return offset_time, offset_time - now
@@ -117,8 +122,12 @@ async def autoreset_bot():
 # Notify the @Warbands role
 async def notify_wave():
     while not client.is_closed():
-        # Schedule next run to be 15 minutes before wave
-        ntime, delta = time_until_wave(timedelta(minutes=-15))
+        # Schedule next run to be 15 minutes before next wave
+        # We pretend like we're 20 minutes in the future because this way
+        # at wave-15, we want to schedule ourselves to wake up in 7hrs in 
+        # preperation for the wave in 7hrs 15mins, not the wave in 15mins
+        now = datetime.now().astimezone(timezone.utc) + timedelta(minutes=20)
+        ntime, delta = time_until_wave(timedelta(minutes=-15), now)
         msg = f'Wave notification scheduled for {ntime.isoformat()}, {str(delta)} from now'
         await get_channel(BOT_LOG).send(msg)
         await asyncio.sleep(delta.seconds)
