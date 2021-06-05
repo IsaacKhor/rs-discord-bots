@@ -1,34 +1,42 @@
 #!/usr/bin/env python3
 
-import discord, aiohttp, atexit, inspect, asyncio
+import discord, aiohttp, atexit, asyncio
 import worldbot
 from datetime import datetime, timedelta, timezone
+
+WBS_UNITED_ID = 261802377009561600
 
 BOT_CHANNEL = 803855255933681664
 VOICE_CHANNEL = 780814756713594951
 BOT_LOG = 804209525585608734
 HELP_CHANNEL = 842186485200584754
+NOTIFY_CHANNEL = 842527669085667408
+NOTIFY_ROLE = 484721172815151114
 
 conn = aiohttp.TCPConnector(ssl=False)
 client = discord.Client(connector = conn)
 bot = worldbot.WorldBot()
 msglog = open('messages.log', 'a', encoding='utf-8')
 
+def get_channel(id):
+    return client.get_channel(id)
+
+async def send_to_channel(id, msg):
+    await get_channel(id).send(msg)
+
 @atexit.register
 def save_state():
     bot.save_state()
-
-def get_channel(id):
-    return client.get_channel(id)
 
 @client.event
 async def on_ready():
     print('Logged is as {}'.format(client.user))
     greetmsg = f'Bot starting up.\nVersion {worldbot.VERSION} loaded.'
-    await get_channel(BOT_LOG).send(greetmsg)
+    await send_to_channel(BOT_LOG, greetmsg)
 
     # Schedule the autoreset every hour after a wave
     client.loop.create_task(autoreset_bot())
+    client.loop.create_task(notify_wave())
 
 
 @client.event
@@ -58,6 +66,9 @@ async def on_message(msgobj):
 
 @client.event
 async def on_voice_state_update(member, before, after):
+    if bot.is_ignoremode():
+        return
+
     now = datetime.now().astimezone(timezone.utc)
     nowf = now.strftime('%H:%M:%S')
 
@@ -75,21 +86,23 @@ async def on_voice_state_update(member, before, after):
             f'{nowf}: **"{member.display_name}" left** voice')
 
 
-async def delay_to_nextwave():
+# Gets the time of next wave and timedelta until that time. Must include
+# an offset
+def time_until_wave(offset):
     now = datetime.now().astimezone(timezone.utc)
     next_wave = worldbot.get_next_wave_datetime(now)
-    next_autoreset = next_wave + timedelta(hours=1)
+    offset_time = next_wave + offset
+    return offset_time, offset_time - now
 
-    wait_time = next_autoreset - now
-    msg = f"Next wave is at {next_wave.isoformat()}. Next autoreset scheduled for " + \
-          f"{next_autoreset.isoformat()}, which is {str(wait_time)} from now."
-
-    await get_channel(BOT_LOG).send(inspect.cleandoc(msg))
-    await asyncio.sleep(wait_time.seconds)
 
 # Auto reset 1hr after the wave
 async def autoreset_bot():
-    while not bot.is_closed(): # Loop
+    while not client.is_closed(): # Loop
+        next_autoreset, wait_time = time_until_wave(timedelta(hours=1))
+        msg = f'Autoreset scheduled for {next_autoreset.isoformat()}, {str(wait_time)} from now.'
+        await get_channel(BOT_LOG).send(msg)
+        await asyncio.sleep(wait_time.seconds)
+
         if bot.is_registry_empty():
             summary = '\n' + bot.get_wave_summary()
         else:
@@ -97,10 +110,27 @@ async def autoreset_bot():
 
         bot.reset_state()
         msg = 'Auto reset triggered.' + summary
-        await get_channel(BOT_LOG).send(msg)
-        await get_channel(BOT_CHANNEL).send(msg)
+        await send_to_channel(BOT_LOG, msg)
+        await send_to_channel(BOT_CHANNEL, msg)
 
-        await delay_to_nextwave()
+
+# Notify the @Warbands role
+async def notify_wave():
+    while not client.is_closed():
+        # Schedule next run to be 15 minutes before wave
+        ntime, delta = time_until_wave(timedelta(minutes=-15))
+        msg = f'Wave notification scheduled for {ntime.isoformat()}, {str(delta)} from now'
+        await get_channel(BOT_LOG).send(msg)
+        await asyncio.sleep(delta.seconds)
+
+        # We put the actual notification after the slee because this way,
+        # the 1st time the loop is run we don't immediately notify everybody
+        # on bot startup, instead we wait until the correct time
+        if bot.is_ignoremode():
+            continue
+        await send_to_channel(NOTIFY_CHANNEL,
+            f'<@&{NOTIFY_ROLE}>: wave in 15 minutes')
+
 
 import sys
 if len(sys.argv) < 2:
