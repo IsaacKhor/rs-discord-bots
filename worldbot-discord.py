@@ -2,7 +2,6 @@
 
 import discord, aiohttp, atexit, inspect, asyncio
 import worldbot
-from discord.ext import tasks
 from datetime import datetime, timedelta, timezone
 
 BOT_CHANNEL = 803855255933681664
