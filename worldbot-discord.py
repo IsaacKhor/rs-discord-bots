@@ -128,14 +128,22 @@ async def notify_wave():
         # preperation for the wave in 7hrs 15mins, not the wave in 15mins
         now = datetime.now().astimezone(timezone.utc) + timedelta(minutes=20)
         ntime, delta = time_until_wave(timedelta(minutes=-15), now)
-        msg = f'Wave notification scheduled for {ntime.isoformat()}, {str(delta)} from now'
+        msg = f'Wave notification scheduled for {ntime.isoformat()}, {str(delta)} ({delta.seconds}) from now'
+
+        waitsecs = delta.seconds
+        if waitsecs < 60:
+            waitsecs = (60 * 60 * 7) - 3
+            msg += f'\nWARN: Bot got confused, waiting for 7hrs.'
+            msg += f'\nINFO: scheduling for {str(ntime)}, calculating based on {str(now)}, delta is {delta.seconds}'
+
         await get_channel(BOT_LOG).send(msg)
-        await asyncio.sleep(delta.seconds)
+        await asyncio.sleep(waitsecs)
 
         # We put the actual notification after the slee because this way,
         # the 1st time the loop is run we don't immediately notify everybody
         # on bot startup, instead we wait until the correct time
         if bot.is_ignoremode():
+            await send_to_channel(BOT_LOG, 'Not notifying due to ignore mode')
             continue
         await send_to_channel(NOTIFY_CHANNEL,
             f'<@&{NOTIFY_ROLE}>: wave in 15 minutes')
