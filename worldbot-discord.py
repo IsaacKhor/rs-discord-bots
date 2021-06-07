@@ -92,10 +92,12 @@ async def on_voice_state_update(member, before, after):
 
 # Gets the time of next wave and timedelta until that time. Must include
 # an offset
-def time_until_wave(offset, now=None):
-    if not now:
-        now = datetime.now().astimezone(timezone.utc)
-    next_wave = worldbot.get_next_wave_datetime(now)
+# Returns the exact time being scheduled, and 
+def time_until_wave(offset, effectivenow=None):
+    now = datetime.now().astimezone(timezone.utc)
+    if not effectivenow:
+        effectivenow = datetime.now().astimezone(timezone.utc)
+    next_wave = worldbot.get_next_wave_datetime(effectivenow)
     offset_time = next_wave + offset
     return offset_time, offset_time - now
 
@@ -131,13 +133,13 @@ async def notify_wave():
         msg = f'Wave notification scheduled for {ntime.isoformat()}, {str(delta)} ({delta.seconds}) from now'
 
         waitsecs = delta.seconds
-        if waitsecs < 60:
+        if waitsecs < 60 or waitsecs > (7 * 60 * 60):
             waitsecs = (60 * 60 * 7) - 3
             msg += f'\nWARN: Bot got confused, waiting for 7hrs.'
             msg += f'\nINFO: scheduling for {str(ntime)}, calculating based on {str(now)}, delta is {delta.seconds}'
 
         await get_channel(BOT_LOG).send(msg)
-        await asyncio.sleep(waitsecs)
+        await asyncio.sleep(delta.seconds)
 
         # We put the actual notification after the slee because this way,
         # the 1st time the loop is run we don't immediately notify everybody
