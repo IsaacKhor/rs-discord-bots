@@ -91,8 +91,11 @@ async def on_voice_state_update(member, before, after):
 
 
 # Gets the time of next wave and timedelta until that time. Must include
-# an offset
-# Returns the exact time being scheduled, and 
+# an offset. Optionally incrlude effectivenow to calculate the time of the
+# next wave based on that time instead of the actual current time.
+# Offset is the timedelta between the actual time of the next wave plus
+# that offset
+# Returns the exact time being scheduled, and the timedelta until that time
 def time_until_wave(offset, effectivenow=None):
     now = datetime.now().astimezone(timezone.utc)
     if not effectivenow:
