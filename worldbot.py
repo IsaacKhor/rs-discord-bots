@@ -3,7 +3,7 @@ import traceback, inspect, math, pytz, os, json
 from datetime import datetime, timezone, timedelta
 from enum import Enum, auto
 
-VERSION = '3.8.3'
+VERSION = '3.8.4'
 NUM_PAT = re.compile(r'^(\d+)')
 DEFAULT_FC = 'Wbs United'
 P2P_WORLDS = [
@@ -13,7 +13,8 @@ P2P_WORLDS = [
 60,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,
 82,83,84,85,86,87,88,89,91,92,96,97,98,99,
 100,102,103,104,105,106,114,115,116,117,118,119,
-121,123,124,134,137,138,139,140]
+121,123,124,134,137,138,139,140,
+252,257,259]
 
 EASTER_EGGS = {
     'wtf is the fc': 'User is not a nice person. This incident will be reported. Especially Kyle. That guy\'s evil',
@@ -337,7 +338,7 @@ class WorldBot:
     def save_state(self):
         m = {'upvotes': self._upvotes, 'downvotes': self._downvotes}
         with open(SAVEFILE, 'w') as f:
-            json.dump(DEFAULT, f)
+            json.dump(m, f)
 
     def get_worlds_with_info(self):
         return [w for w in self._registry if w]
