@@ -14,7 +14,7 @@ P2P_WORLDS = [
 82,83,84,85,86,87,88,89,91,92,96,97,98,99,
 100,102,103,104,105,106,114,115,116,117,118,119,
 121,123,124,134,137,138,139,140,
-252,257,259]
+252,257,258,259]
 
 EASTER_EGGS = {
     'wtf is the fc': 'User is not a nice person. This incident will be reported. Especially Kyle. That guy\'s evil',
