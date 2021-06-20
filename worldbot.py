@@ -3,7 +3,7 @@ import traceback, inspect, math, pytz, os, json
 from datetime import datetime, timezone, timedelta
 from enum import Enum, auto
 
-VERSION = '3.8.4'
+VERSION = '3.9.0'
 NUM_PAT = re.compile(r'^(\d+)')
 DEFAULT_FC = 'Wbs United'
 P2P_WORLDS = [
@@ -74,15 +74,15 @@ followed by any of the following (spaces are optional for each command):
 """ , """
 Examples:
 - `119dwf 10gc` marks world as dying in 10\\*0.6=6 minutes
-- `119 mhs 4:30mins` marks the world as dying in 4:30 minutes
-- `119 mhs 4m` marks the world as dying in 4 minutes
+- `119 mhs 4:30mins` marks the world as dying in 4:30 minutes real time
+- `119 mhs 4` marks the world as dying in 4:00 gameclock
 - `28 dead`
 - `84 beamed02 hcf clear`, you can combine multiple commands
 - `.call 10 dwf hcf` will add '10 dwf hcf' to the call history
 
 Further notes:
 - Spaces are optional between different information to update a world. That
-  means `10elmhcf7m` is just as valid as `10 elm hcf 7m`.
+  means `10elmhcf7` is just as valid as `10 elm hcf 7`.
 - For all time inputs the colon and seconds part is optional. For example,
   both '7' and '7:15' are both perfectly valid times, but not '715'.
 
@@ -546,8 +546,8 @@ class WorldBot:
 
             # Syntax: 'broken :02', same syntax as beamed
             elif cmd.startswith('broke'):
-                cmd = remove_beginning('broke', cmd)
                 cmd = remove_beginning('broken', cmd)
+                cmd = remove_beginning('broke', cmd)
                 num, cmd = get_beg_number(cmd)
 
                 time = WbsTime.get_abs_minute_or_cur(num).add_mins(5)
@@ -564,8 +564,6 @@ class WorldBot:
 
                 if cmd.startswith('mins'):
                     cmd = remove_beginning('mins', cmd)
-                elif cmd.startswith('m'):
-                    cmd = remove_beginning('m', cmd)
                 else:
                     cmd = remove_beginning('gc', cmd)
                     ticks = mins*60 + secs

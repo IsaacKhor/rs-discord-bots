@@ -49,14 +49,13 @@ async def on_message(msgobj):
     if msgobj.author == client.user or msgobj.author.display_name == 'worldbot':
         return
 
-    ispublic = isinstance(msgobj.channel, discord.TextChannel)
-
-    if ispublic and not (msgobj.channel.id in [BOT_CHANNEL, HELP_CHANNEL]):
+    # Only respond to messages in text channels that are the bot and the help
+    istext = isinstance(msgobj.channel, discord.TextChannel)
+    if istext and not (msgobj.channel.id in [BOT_CHANNEL, HELP_CHANNEL]):
         return
 
     text = msgobj.content
     author = msgobj.author.display_name
-
     msglog.write(f'{author}: {text}\n')
 
     response = bot.on_notify_msg(text, ispublic, author)
@@ -113,15 +112,8 @@ async def autoreset_bot():
         await get_channel(BOT_LOG).send(msg)
         await asyncio.sleep(wait_time.seconds)
 
-        if bot.is_registry_empty():
-            summary = '\n' + bot.get_wave_summary()
-        else:
-            summary = ''
-
         bot.reset_state()
-        msg = 'Auto reset triggered.' + summary
-        await send_to_channel(BOT_LOG, msg)
-        await send_to_channel(BOT_CHANNEL, msg)
+        await send_to_channel(BOT_LOG, 'Auto reset triggered.')
 
 
 # Notify the @Warbands role
