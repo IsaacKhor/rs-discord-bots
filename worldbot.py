@@ -1,9 +1,9 @@
 import re, functools, pprint
 import traceback, inspect, math, pytz, os, json
 from datetime import datetime, timezone, timedelta
-from enum import Enum, auto
+from enum import Enum
 
-VERSION = '3.9.0'
+VERSION = '3.9.1'
 NUM_PAT = re.compile(r'^(\d+)')
 DEFAULT_FC = 'Wbs United'
 P2P_WORLDS = [
@@ -582,7 +582,7 @@ class WorldBot:
         # print(f'Updating: {world_num}, {loc}, {state}, {tents}, {time}, {notes}')
         return self.update_world(world_num, loc, state, tents, time, notes)
 
-    def process_command(self, msgtxt, ispublic, author):
+    def process_command(self, msgtxt, author):
         try:
             cmd = msgtxt.strip().lower()
 
@@ -675,6 +675,6 @@ class WorldBot:
             traceback.print_exc()
             return 'Error: ' + str(e) + '\n' + traceback.format_exc()
 
-    def on_notify_msg(self, msgtxt, ispublic, author):
-        return self.process_command(msgtxt, ispublic, author)
+    def on_notify_msg(self, msgtxt, author):
+        return self.process_command(msgtxt, author)
 

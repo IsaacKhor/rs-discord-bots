@@ -58,7 +58,7 @@ async def on_message(msgobj):
     author = msgobj.author.display_name
     msglog.write(f'{author}: {text}\n')
 
-    response = bot.on_notify_msg(text, ispublic, author)
+    response = bot.on_notify_msg(text, author)
     if response:
         if type(response) is str:
             await msgobj.channel.send(response)
