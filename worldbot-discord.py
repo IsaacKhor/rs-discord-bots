@@ -47,7 +47,8 @@ async def on_ready():
 @client.event
 async def on_message(msgobj):
     # Don't respond to our own messages
-    if msgobj.author == client.user or msgobj.author.display_name == 'worldbot':
+    if msgobj.author == client.user or msgobj.author.display_name == 'worldbot' \
+        or msgobj.author.bot:
         return
 
     # Only respond to messages in text channels that are the bot and the help
