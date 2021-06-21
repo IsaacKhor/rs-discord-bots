@@ -143,7 +143,7 @@ async def notify_wave():
             await send_to_channel(BOT_LOG, 'Not notifying due to ignore mode')
             continue
         await send_to_channel(NOTIFY_CHANNEL,
-            f'<@&{NOTIFY_ROLE}> wave in 15 minutes. Please join the voice call underneath <#803855255933681664>.')
+            f'<@&{NOTIFY_ROLE}> wave in 15 minutes. Please join the voice call at <#803855255933681664>.')
 
 
 import sys
