@@ -65,7 +65,7 @@ async def on_message(msgobj):
             await msgobj.channel.send(response)
         elif type(response) is list:
             for s in response:
-                await msgobj.channel.send(response)
+                await msgobj.channel.send(s)
 
 
 @client.event

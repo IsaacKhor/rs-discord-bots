@@ -88,6 +88,13 @@ Further notes:
 
 **Misc**
 - There are a bunch of easter eggs if you know the old bot. Why don't you try some of them?
+""", """
+**FAQ**
+1. What do I do if I put in the wrong info? (eg `53rdi` instead of `54rdi`)
+
+Two things:
+- `53unk` to update world 53 to unknown location
+- `54rdi` to update 54 to rdi
 """
 ]
 
