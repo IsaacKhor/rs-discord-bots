@@ -3,7 +3,7 @@ import traceback, inspect, math, pytz, os, json
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 
-VERSION = '3.9.1'
+VERSION = '3.9.2'
 NUM_PAT = re.compile(r'^(\d+)')
 DEFAULT_FC = 'Wbs United'
 P2P_WORLDS = [
@@ -582,7 +582,7 @@ class WorldBot:
         # print(f'Updating: {world_num}, {loc}, {state}, {tents}, {time}, {notes}')
         return self.update_world(world_num, loc, state, tents, time, notes)
 
-    def process_command(self, msgtxt, author):
+    def process_command(self, msgtxt, author, msgobj):
         try:
             cmd = msgtxt.strip().lower()
 
@@ -654,6 +654,10 @@ class WorldBot:
                 return f'Thank you :D\n{self.get_votes_summary()}'
 
             elif 'bad bot' in cmd or 'badbot' in cmd:
+                # reserved for drizzin XD
+                if msgobj.author.id == 493792070956220426:
+                    return f'Fuck you'
+
                 self._downvotes += 1
                 return f':( *cries*\n{self.get_votes_summary()}'
 
@@ -675,6 +679,6 @@ class WorldBot:
             traceback.print_exc()
             return 'Error: ' + str(e) + '\n' + traceback.format_exc()
 
-    def on_notify_msg(self, msgtxt, author):
-        return self.process_command(msgtxt, author)
+    def on_notify_msg(self, msgtxt, author, msgobj):
+        return self.process_command(msgtxt, author, msgobj)
 

@@ -6,12 +6,13 @@ import worldbot
 
 WBS_UNITED_ID = 261802377009561600
 
-BOT_CHANNEL = 803855255933681664
-VOICE_CHANNEL = 780814756713594951
-BOT_LOG = 804209525585608734
-HELP_CHANNEL = 842186485200584754
-NOTIFY_CHANNEL = 842527669085667408
-NOTIFY_ROLE = 484721172815151114
+CHANNEL_WAVE_CHAT = 803855255933681664
+CHANNEL_VOICE = 780814756713594951
+CHANNEL_BOT_LOG = 804209525585608734
+CHANNEL_HELP = 842186485200584754
+CHANNEL_NOTIFY = 842527669085667408
+
+ROLE_WBS_NOTIFY = 484721172815151114
 
 conn = aiohttp.TCPConnector(ssl=False)
 client = discord.Client(connector = conn)
@@ -33,10 +34,10 @@ def save_state():
 @client.event
 async def on_ready():
     print('Logged is as {}'.format(client.user))
-    greetmsg = f'Bot starting up.\nVersion {worldbot.VERSION} loaded.'
+    greetmsg = f'Bot starting up. Version {worldbot.VERSION} loaded.'
     if DEBUG:
         greetmsg += '\n DEBUG MODE ENABLED.'
-    await send_to_channel(BOT_LOG, greetmsg)
+    await send_to_channel(CHANNEL_BOT_LOG, greetmsg)
 
     # Schedule the autoreset every hour after a wave
     client.loop.create_task(autoreset_bot())
@@ -51,14 +52,14 @@ async def on_message(msgobj):
 
     # Only respond to messages in text channels that are the bot and the help
     istext = isinstance(msgobj.channel, discord.TextChannel)
-    if istext and not (msgobj.channel.id in [BOT_CHANNEL, HELP_CHANNEL]):
+    if istext and not (msgobj.channel.id in [CHANNEL_WAVE_CHAT, CHANNEL_HELP]):
         return
 
     text = msgobj.content
     author = msgobj.author.display_name
     msglog.write(f'{author}: {text}\n')
 
-    response = bot.on_notify_msg(text, author)
+    response = bot.on_notify_msg(text, author, msgobj)
     if response:
         if type(response) is str:
             await msgobj.channel.send(response)
@@ -77,15 +78,15 @@ async def on_voice_state_update(member, before, after):
 
     if (before.channel == None and
         after.channel and
-        after.channel.id == VOICE_CHANNEL):
-        await get_channel(BOT_LOG).send(
+        after.channel.id == CHANNEL_VOICE):
+        await get_channel(CHANNEL_BOT_LOG).send(
             f'{nowf}: __"{member.display_name}" joined__ voice')
 
     # Keep track of people leaving WBS voice
     if (before.channel and
-        before.channel.id == VOICE_CHANNEL and
+        before.channel.id == CHANNEL_VOICE and
         after.channel == None):
-        await get_channel(BOT_LOG).send(
+        await get_channel(CHANNEL_BOT_LOG).send(
             f'{nowf}: **"{member.display_name}" left** voice')
 
 
@@ -107,13 +108,11 @@ def time_until_wave(offset, effectivenow=None):
 # Auto reset 1hr after the wave
 async def autoreset_bot():
     while not client.is_closed(): # Loop
-        next_autoreset, wait_time = time_until_wave(timedelta(hours=1))
-        msg = f'Autoreset scheduled for {next_autoreset.isoformat()}, {str(wait_time)} from now.'
-        await get_channel(BOT_LOG).send(msg)
+        _, wait_time = time_until_wave(timedelta(hours=1))
         await asyncio.sleep(wait_time.seconds)
 
         bot.reset_state()
-        await send_to_channel(BOT_LOG, 'Auto reset triggered.')
+        await send_to_channel(CHANNEL_BOT_LOG, 'Auto reset triggered.')
 
 
 # Notify the @Warbands role
@@ -124,26 +123,18 @@ async def notify_wave():
         # at wave-15, we want to schedule ourselves to wake up in 7hrs in 
         # preperation for the wave in 7hrs 15mins, not the wave in 15mins
         now = datetime.now().astimezone(timezone.utc) + timedelta(minutes=20)
-        ntime, delta = time_until_wave(timedelta(minutes=-15), now)
-        msg = f'Wave notification scheduled for {ntime.isoformat()}, {str(delta)} ({delta.seconds}) from now'
-
-        waitsecs = delta.seconds
-        if waitsecs < 60 or waitsecs > (7 * 60 * 60):
-            waitsecs = (60 * 60 * 7) - 3
-            msg += f'\nWARN: Bot got confused, waiting for 7hrs.'
-            msg += f'\nINFO: scheduling for {str(ntime)}, calculating based on {str(now)}, delta is {delta.seconds}'
-
-        await get_channel(BOT_LOG).send(msg)
+        _, delta = time_until_wave(timedelta(minutes=-15), now)
         await asyncio.sleep(delta.seconds)
 
         # We put the actual notification after the slee because this way,
         # the 1st time the loop is run we don't immediately notify everybody
         # on bot startup, instead we wait until the correct time
         if bot.is_ignoremode():
-            await send_to_channel(BOT_LOG, 'Not notifying due to ignore mode')
+            await send_to_channel(CHANNEL_BOT_LOG, 'Not notifying due to ignore mode')
             continue
-        await send_to_channel(NOTIFY_CHANNEL,
-            f'<@&{NOTIFY_ROLE}> wave in 15 minutes. Please join the voice call at <#803855255933681664>.')
+
+        await send_to_channel(CHANNEL_NOTIFY,
+            f'<@&{ROLE_WBS_NOTIFY}> wave in 15 minutes. Please join at <#{CHANNEL_WAVE_CHAT}> and <#{CHANNEL_VOICE}>')
 
 
 import sys
