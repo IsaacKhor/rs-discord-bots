@@ -293,11 +293,17 @@ class World():
             self.state = WorldState.DEAD
 
     def should_show(self):
-        return not (self.state == WorldState.NOINFO and
-                self.loc == Location.UNKNOWN and
-                self.tents == None and
-                self.time == None and
-                self.notes == None)
+        # Show all worlds instead of hiding away worlds with no info
+        # Discussion held 24 jun 2021, scouts wanted easy access to a list
+        # of worlds for which we have no info instead of having to manually
+        # check. This way it's apparent which worlds are available
+        # for scouting
+        return True
+        # return not (self.state == WorldState.NOINFO and
+        #         self.loc == Location.UNKNOWN and
+        #         self.tents == None and
+        #         self.time == None and
+        #         self.notes == None)
 
 
 SAVEFILE = './worldbot-state.json'
