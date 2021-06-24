@@ -428,8 +428,6 @@ class WorldBot:
         scoutstr = ', '.join(sorted(self._scoutlist))
         callhist = ', '.join(self._worldhist)
         ret = f"""
-        Wave summary:
-
         Host: {self._host}
         Scouts: {scoutstr}
         Anti: {antistr}
