@@ -398,7 +398,7 @@ class WorldBot:
     def get_current_status(self):
         worlds = self.get_worlds()
 
-        dead_str = ', '.join([str(w.num) for w in worlds if w.state == WorldState.DEAD])
+        dead_str = ','.join([str(w.num) for w in worlds if w.state == WorldState.DEAD])
         active_dwfs = self.get_active_for_loc(Location.DWF)
         active_elms = self.get_active_for_loc(Location.ELM)
         active_rdis = self.get_active_for_loc(Location.RDI)
