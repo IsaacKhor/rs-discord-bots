@@ -514,6 +514,7 @@ class WorldBot:
         loc, state, tents, time, notes, = None,None,None,None,None
 
         cmd = s
+        time_found = False
         while cmd:
             if cmd.startswith('dead'):
                 state = WorldState.DEAD
@@ -568,7 +569,10 @@ class WorldBot:
             # Syntax: 'xx:xx gc', the seconds and gc part optional
             # Uses gameclock by default. To override use 'mins' postfix
             # Don't use isnumeric because it accepts wierd unicode codepoints
-            elif cmd[0] in '0123456789':
+            # We only want to parse the time once, so if a scout includes
+            # numbers in their comments about a world we don't re-parse
+            # that as the new time
+            elif cmd[0] in '0123456789' and not time_found:
                 mins, cmd = get_beg_number(cmd)
                 secs, cmd = get_beg_number(cmd)
                 secs = secs if secs else 0
@@ -583,6 +587,7 @@ class WorldBot:
 
                 time = WbsTime.current().add(WbsTime(int(mins), int(secs)))
                 state = WorldState.ALIVE
+                time_found = True
                 continue
 
             # Everything after first unrecognised token are notes
