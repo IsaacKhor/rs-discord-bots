@@ -80,6 +80,12 @@ async def on_voice_state_update(member, before, after):
     if (before.channel == None and
         after.channel and
         after.channel.id == CHANNEL_VOICE):
+        # Participant joined the channel
+        # Register with bot if they join within 20minutes of a wave
+        _, delta = time_until_wave(timedelta(0))
+        if delta.seconds < 20 * 60 or delta.seconds > 400 * 60:
+            bot.add_participant(member.display_name)
+        
         await get_channel(CHANNEL_BOT_LOG).send(
             f'{nowf}: __"{member.display_name}" joined__ voice')
 
@@ -98,11 +104,11 @@ async def on_voice_state_update(member, before, after):
 # that offset
 # Returns the exact time being scheduled, and the timedelta until that time
 def time_until_wave(offset, effectivenow=None):
-    now = datetime.now().astimezone(timezone.utc)
     if not effectivenow:
         effectivenow = datetime.now().astimezone(timezone.utc)
     next_wave = worldbot.get_next_wave_datetime(effectivenow)
     offset_time = next_wave + offset
+    now = datetime.now().astimezone(timezone.utc)
     return offset_time, offset_time - now
 
 

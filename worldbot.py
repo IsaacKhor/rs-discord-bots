@@ -323,6 +323,7 @@ class WorldBot:
         self._antilist = set()
         self._scoutlist = set()
         self._worldhist = list()
+        self._participants = set()
 
         self._ignoremode = False
         self._registry = dict()
@@ -366,10 +367,6 @@ class WorldBot:
 
     def get_worlds(self):
         return self._registry.values()
-
-        for num in P2P_WORLDS:
-            self._registry[num] = World(num)
-
 
     # Return true iff we actually update something
     def update_world(self, num, loc, state, tents, time, notes):
@@ -432,6 +429,7 @@ class WorldBot:
         Scouts: {scoutstr}
         Anti: {antistr}
         Worlds: {callhist}
+        Participants: {', '.join(self._participants)}
         """
         return inspect.cleandoc(ret)
 
@@ -448,6 +446,10 @@ class WorldBot:
         curtime = WbsTime.current()
         for w in self.get_worlds():
             w.update_state(curtime)
+
+    def add_participant(self, display_name):
+        self._participants.add(display_name)
+
 
 # Commands supported:
 # - 119dwf hcf beamed :02 clear
