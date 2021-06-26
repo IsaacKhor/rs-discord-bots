@@ -11,10 +11,12 @@ DEFAULT = {
 
 class WorldBot:
     def __init__(self):
+        self.ignoremode = False
         self.reset_state()
         self.load_state()
 
     def reset_state(self):
+        # Only thing of note is that reset shouldn't reset ignoremode
         self.fcnanme = DEFAULT_FC
         self.host = ''
         self.antilist = set()
@@ -22,7 +24,6 @@ class WorldBot:
         self.worldhist = list()
         self.participants = set()
 
-        self.ignoremode = False
         self._registry = dict()
 
         for num in P2P_WORLDS:
