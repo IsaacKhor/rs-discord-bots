@@ -143,10 +143,17 @@ class WorldBot:
         worlds = [w for w in self.get_worlds() 
             if w.loc == loc 
             and w.state == WorldState.NOINFO
-            and w.assigned == False]
+            and w.assigned == False
+            and w.is_visible()]
 
         assigning = worlds[:numworlds]
         for w in assigning:
             w.assigned = True
+
+        ret = ', '.join([str(w.num) for w in assigning])
+        if len(assigning) < numworlds:
+            ret += '. No more worlds available.'
+
+        return ret
+
         
-        return ', '.join([str(w.num) for w in assigning])

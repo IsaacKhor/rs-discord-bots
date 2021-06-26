@@ -217,7 +217,7 @@ class World:
 
         return bool(other.loc or other.state or other.tents or other.time or other.notes)
 
-    def should_show(self):
+    def is_visible(self):
         return not self.num in HIDDEN_WORLDS
 
 

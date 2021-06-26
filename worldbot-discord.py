@@ -192,7 +192,7 @@ async def wbs(ctx):
 
 
 @client.command(name='take', brief='Assign yourself some worlds')
-async def take(ctx, numworlds: int = 3, location: str = 'unk'):
+async def take(ctx, numworlds: int = 5, location: str = 'unk'):
     """
     Grabs `numworlds` unassigned worlds of location `location` 
     with no information except location available and marks them
