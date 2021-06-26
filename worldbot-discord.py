@@ -8,7 +8,7 @@ import discord
 import worldbot, parser
 from wbstime import *
 
-VERSION = '3.9.5'
+VERSION = '3.10.0'
 
 WBS_UNITED_ID = 261802377009561600
 
