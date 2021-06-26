@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 
-import discord, aiohttp, atexit, asyncio, os
+import aiohttp, atexit, asyncio, os, textwrap
 from datetime import datetime, timedelta, timezone
-import worldbot
+from discord.ext import commands
+import discord
+
+import worldbot, parser
+from wbstime import *
+
+VERSION = '3.9.5'
 
 WBS_UNITED_ID = 261802377009561600
 
@@ -15,7 +21,7 @@ CHANNEL_NOTIFY = 842527669085667408
 ROLE_WBS_NOTIFY = 484721172815151114
 
 conn = aiohttp.TCPConnector(ssl=False)
-client = discord.Client(connector = conn)
+client = commands.Bot(connector=conn, command_prefix='.')
 bot = worldbot.WorldBot()
 msglog = open('messages.log', 'a', encoding='utf-8')
 
@@ -31,10 +37,11 @@ async def send_to_channel(id, msg):
 def save_state():
     bot.save_state()
 
+
 @client.event
 async def on_ready():
     print('Logged is as {}'.format(client.user))
-    greetmsg = f'Bot starting up. Version {worldbot.VERSION} loaded.'
+    greetmsg = f'Bot starting up. Version {VERSION} loaded.'
     if DEBUG:
         greetmsg += '\n DEBUG MODE ENABLED.'
     await send_to_channel(CHANNEL_BOT_LOG, greetmsg)
@@ -42,31 +49,6 @@ async def on_ready():
     # Schedule the autoreset every hour after a wave
     client.loop.create_task(autoreset_bot())
     client.loop.create_task(notify_wave())
-
-
-@client.event
-async def on_message(msgobj):
-    # Don't respond to our own messages
-    if msgobj.author == client.user or msgobj.author.display_name == 'worldbot' \
-        or msgobj.author.bot:
-        return
-
-    # Only respond to messages in text channels that are the bot and the help
-    istext = isinstance(msgobj.channel, discord.TextChannel)
-    if istext and not (msgobj.channel.id in [CHANNEL_WAVE_CHAT, CHANNEL_HELP]):
-        return
-
-    text = msgobj.content
-    author = msgobj.author.display_name
-    msglog.write(f'{author}: {text}\n')
-
-    response = bot.on_notify_msg(text, author, msgobj)
-    if response:
-        if type(response) is str:
-            await msgobj.channel.send(response)
-        elif type(response) is list:
-            for s in response:
-                await msgobj.channel.send(s)
 
 
 @client.event
@@ -95,21 +77,6 @@ async def on_voice_state_update(member, before, after):
         after.channel == None):
         await get_channel(CHANNEL_BOT_LOG).send(
             f'{nowf}: **"{member.display_name}" left** voice')
-
-
-# Gets the time of next wave and timedelta until that time. Must include
-# an offset. Optionally incrlude effectivenow to calculate the time of the
-# next wave based on that time instead of the actual current time.
-# Offset is the timedelta between the actual time of the next wave plus
-# that offset
-# Returns the exact time being scheduled, and the timedelta until that time
-def time_until_wave(offset, effectivenow=None):
-    if not effectivenow:
-        effectivenow = datetime.now().astimezone(timezone.utc)
-    next_wave = worldbot.get_next_wave_datetime(effectivenow)
-    offset_time = next_wave + offset
-    now = datetime.now().astimezone(timezone.utc)
-    return offset_time, offset_time - now
 
 
 # Auto reset 1hr after the wave
@@ -142,6 +109,117 @@ async def notify_wave():
 
         await send_to_channel(CHANNEL_NOTIFY,
             f'<@&{ROLE_WBS_NOTIFY}> wave in 15 minutes. Please join at <#{CHANNEL_WAVE_CHAT}> and <#{CHANNEL_VOICE}>')
+
+
+### ============
+### Bot commands
+### ============
+
+# Only the commands that we handle through the discord.py parser
+# The rest are handled in the worldbot module itself
+
+@client.command(name='debug', brief='Shows debug information')
+async def debug(ctx):
+    msg = bot.get_debug_info()
+    if DEBUG:
+        print(msg)
+    for l in textwrap.wrap(msg, width=1900):
+        await ctx.send(l)
+
+
+@client.command(name='version', brief='Show version')
+async def version(ctx):
+    await ctx.send(f'Bot version v{VERSION}. Written by CrafyElk :D')
+
+
+@client.command(name='reset', brief='Reset bot state')
+async def reset(ctx):
+    summary = bot.get_wave_summary()
+    bot.reset_state()
+    await ctx.send(summary)
+
+
+@client.command(name='fc', brief='Set new in-game fc')
+async def fc(ctx, fc_name: str):
+    bot.fcnanme = fc_name
+    await ctx.send(f'Setting FC to: {bot.fcnanme}')
+
+
+@client.command(name='host', brief='Set yourself as host')
+async def host(ctx, host: str):
+    bot.host = host
+    await ctx.send(f'Setting host to: {bot.host}')
+
+
+@client.command(name='scout', brief='Add yourself to scout list')
+async def scout(ctx):
+    bot.scoutlist.add(ctx.author.display_name)
+    await ctx.send(f'Adding {ctx.author.display_name} to scout list')
+
+
+@client.command(name='anti', brief='Add yourself to anti list')
+async def anti(ctx):
+    bot.antilist.add(ctx.author.display_name)
+    await ctx.send(f'Adding {ctx.author.display_name} to anti list')
+
+
+@client.command(name='call', brief='Add msg to call history')
+async def call(ctx, *, msg: str):
+    bot.worldhist.append(msg)
+    await ctx.send(f'Adding {msg} to call history')
+
+
+@client.command(name='wbs', brief='Show next wave information')
+async def wbs(ctx):
+    """ Returns the time to and of next wave in several timezones. """
+    await ctx.send(next_wave_info())
+
+
+@client.command(name='take', brief='Assign yourself some worlds')
+async def take(ctx, numworlds: int = 3, location: str = 'unk'):
+    """
+    Grabs `numworlds` unassigned worlds of location `location` 
+    with no information except location available and marks them
+    as assigned. The intended workflow is for a scout to 
+    `take 5 unk` to assign themselves 5 worlds of unknown 
+    location and then scout those worlds, to prevent
+    scouts from scouting the same worlds.
+
+    `numworlds` must be >=1
+    `location` must be `elm|rdi|dwf|unk`, defaults to unk
+    """
+    if not parser.is_location(location):
+        await ctx.send(f'Invalid location: {location}')
+    if numworlds < 1:
+        await ctx.send(f'Invalid numworlds: {numworlds}')
+    ret = bot.take_worlds(numworlds, parser.convert_location(location))
+    await ctx.send(ret, reference=ctx.message, mention_author=True)
+
+
+@client.event
+async def on_message(msgobj):
+    # Don't respond to bot messages to prevent infinite loops
+    # This includes ourselves
+    if msgobj.author.bot:
+        return
+
+    # Only respond to messages in text channels that are the bot and the help
+    istext = isinstance(msgobj.channel, discord.TextChannel)
+    if istext and not (msgobj.channel.id in [CHANNEL_WAVE_CHAT, CHANNEL_HELP]):
+        return
+
+    msglog.write(f'{msgobj.author.display_name}: {msgobj.content}\n')
+
+    # We only continue on to process bot commands if the return is falsy
+    response = parser.process_message(bot, msgobj)
+    if response:
+        if type(response) is str:
+            await msgobj.channel.send(response)
+        elif type(response) is list:
+            for s in response:
+                await msgobj.channel.send(s)
+    else:
+        await client.process_commands(msgobj)
 
 
 import sys
