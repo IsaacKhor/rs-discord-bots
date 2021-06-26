@@ -145,9 +145,12 @@ async def fc(ctx, fc_name: str):
     await ctx.send(f'Setting FC to: {bot.fcnanme}')
 
 
-@client.command(name='host', brief='Set yourself as host')
-async def host(ctx, host: str):
-    bot.host = host
+@client.command(name='host', brief='Set host')
+async def host(ctx, host:str = ''):
+    """ Sets `host` as host. Uses caller if none specified. """
+    if host:
+        bot.host = host
+    bot.host = ctx.author.display_name
     await ctx.send(f'Setting host to: {bot.host}')
 
 
