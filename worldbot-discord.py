@@ -8,7 +8,7 @@ import worldbot, parser
 from wbstime import *
 from models import GUIDE_STR
 
-VERSION = '3.10.3'
+VERSION = '3.10.4'
 
 WBS_UNITED_ID = 261802377009561600
 
@@ -239,7 +239,8 @@ async def on_message(msgobj):
             for s in response:
                 await msgobj.channel.send(s)
     else:
-        print('Passing off to discord.py')
+        if DEBUG:
+            print('Passing off to discord.py')
         await client.process_commands(msgobj)
 
 
