@@ -8,7 +8,7 @@ import worldbot, parser
 from wbstime import *
 from models import GUIDE_STR
 
-VERSION = '3.10.1'
+VERSION = '3.10.2'
 
 WBS_UNITED_ID = 261802377009561600
 
@@ -143,6 +143,13 @@ async def reset(ctx):
     summary = bot.get_wave_summary()
     bot.reset_state()
     await ctx.send(summary)
+
+
+@client.command(name='resetvotes', brief='Reset vote counts')
+async def reset_votes(ctx):
+    bot._upvotes = 0
+    bot._downvotes = 0
+    await ctx.send('Stop the count :o')
 
 
 @client.command(name='fc', brief='Set new in-game fc')
