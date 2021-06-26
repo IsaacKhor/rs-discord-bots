@@ -8,7 +8,7 @@ import worldbot, parser
 from wbstime import *
 from models import GUIDE_STR
 
-VERSION = '3.10.2'
+VERSION = '3.10.3'
 
 WBS_UNITED_ID = 261802377009561600
 
