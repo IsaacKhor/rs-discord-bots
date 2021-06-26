@@ -6,7 +6,7 @@ from discord.ext import commands
 
 import worldbot, parser
 from wbstime import *
-from models import HELP_STRING
+from models import GUIDE_STR
 
 VERSION = '3.10.0'
 
@@ -134,7 +134,8 @@ async def version(ctx):
 
 @client.command(name='guide', brief='Show guide')
 async def version(ctx):
-    await ctx.send(HELP_STRING)
+    for s in GUIDE_STR:
+        await ctx.send(s)
 
 
 @client.command(name='reset', brief='Reset bot state')

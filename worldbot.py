@@ -127,9 +127,6 @@ class WorldBot:
         """
         return inspect.cleandoc(ret)
 
-    def get_help_info(self):
-        return HELP_STRING
-
     def is_registry_empty(self):
         return not any(w for w in self._registry.values())
 

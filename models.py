@@ -216,19 +216,17 @@ class World:
         #         self.notes == None)
 
 
-HELP_STRING = ["""
+GUIDE_STR = ["""
 **Worldbot instructions:**
 
 **Commands**:
 - **list** - lists summary of current status
-- **.help** - show this help message
-- **.debug** - show debug information
+- **.help** - show more detailed help for specific commands
 - **.version** - shows the current version of the bot
 - **.wbs** - shows the time of the next wave
-- **.ignoremode** - enter ignore mode. Ignores all messages.
 
 **Wave management commands** - keep track of people
-- **.host** - set yourself as host
+- **.host [user]** - set user as host. Defaults to caller
 - **.scout** - add yourself to the list of scouts
 - **.anti** - add yourself to the list of anti
 - **.reset** - reset bot for next wave. Also produces the wave summary
@@ -236,6 +234,8 @@ HELP_STRING = ["""
 - **fc?** - shows current fc set by '.fc'
 - **.call <world loc>** - adds <world loc> to the call history.
 - **.take <num> [elm|rdi|dwf|unk]** - assign `num` worlds to yourself
+  For example, `.take 5 dwf` will grab 5 non-scouted dwf worlds and
+  assign them to yourself. Defaults to `unk` if location is not specified.
 """, """
 **Scouting commands** - The bot accepts any commands starting with a number
 followed by any of the following (spaces are optional for each command):
@@ -248,7 +248,6 @@ followed by any of the following (spaces are optional for each command):
 - **'beamed'** with no number provided bot uses current time
 - **'xx:xx gc'** for 'xx:xx' remaining on the game clock. The seconds part is optional
 - **'xx:xx mins'** for xx:xx remaining in real time. The seconds part is optional
-- **'xx:xxm'** m is short for mins
 - **'xx:xx'** if 'gc' or 'mins' is not specified its assumed to be gameclock
 """ , """
 Examples:
