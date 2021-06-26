@@ -235,6 +235,7 @@ HELP_STRING = ["""
 - **.fc <fcname>** - sets active fc
 - **fc?** - shows current fc set by '.fc'
 - **.call <world loc>** - adds <world loc> to the call history.
+- **.take <num> [elm|rdi|dwf|unk]** - assign `num` worlds to yourself
 """, """
 **Scouting commands** - The bot accepts any commands starting with a number
 followed by any of the following (spaces are optional for each command):

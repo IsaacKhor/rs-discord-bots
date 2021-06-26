@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-import aiohttp, atexit, asyncio, os, textwrap
+import aiohttp, atexit, asyncio, os, textwrap, discord
 from datetime import datetime, timedelta, timezone
 from discord.ext import commands
-import discord
 
 import worldbot, parser
 from wbstime import *
+from models import HELP_STRING
 
 VERSION = '3.10.0'
 
@@ -130,6 +130,11 @@ async def debug(ctx):
 @client.command(name='version', brief='Show version')
 async def version(ctx):
     await ctx.send(f'Bot version v{VERSION}. Written by CrafyElk :D')
+
+
+@client.command(name='guide', brief='Show guide')
+async def version(ctx):
+    await ctx.send(HELP_STRING)
 
 
 @client.command(name='reset', brief='Reset bot state')
