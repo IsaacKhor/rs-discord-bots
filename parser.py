@@ -140,7 +140,7 @@ def parse_update_command(msg):
     return update
 
 
-def process_message(worldbot, msgobj):
+def process_message(worldbot, msgobj, debug=False):
     text = msgobj.content
 
     try:
@@ -183,8 +183,11 @@ def process_message(worldbot, msgobj):
 
         elif cmd[0] in '0123456789':
             update = parse_update_command(text)
+            ret = worldbot.update_world(update)
+            if debug:
+                print(f'Found update command, got "{update}"')
             # Falsy return if nothing actually got updated
-            return worldbot.update_world(update)
+            return ret
 
         else:
             for k,v in EASTER_EGGS.items():

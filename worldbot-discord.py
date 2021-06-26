@@ -209,9 +209,13 @@ async def on_message(msgobj):
         return
 
     msglog.write(f'{msgobj.author.display_name}: {msgobj.content}\n')
+    if DEBUG:
+        print(f'{msgobj.author.display_name}: {msgobj.content}')
 
     # We only continue on to process bot commands if the return is falsy
-    response = parser.process_message(bot, msgobj)
+    response = parser.process_message(bot, msgobj, DEBUG)
+    if DEBUG:
+        print(f'Parser response: {response}')
     if response:
         if type(response) is str:
             await msgobj.channel.send(response)
@@ -219,6 +223,7 @@ async def on_message(msgobj):
             for s in response:
                 await msgobj.channel.send(s)
     else:
+        print('Passing off to discord.py')
         await client.process_commands(msgobj)
 
 

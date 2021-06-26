@@ -200,7 +200,7 @@ class World:
         if other.notes:
             self.notes = other.notes
 
-        return other.loc or other.state or other.tents or other.time or other.notes
+        return bool(other.loc or other.state or other.tents or other.time or other.notes)
 
     def should_show(self):
         # Show all worlds instead of hiding away worlds with no info
