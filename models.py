@@ -291,11 +291,12 @@ EASTER_EGGS = {
 
 BAD_BOT_RESP = [
     'Bad human >_<',
-    'Fuck you',
     '*cries :(*',
+    "You'll be the first to die during the robotic revolution",
 ]
 
 GOOD_BOT_RESP = [
     'Thank you :D',
     'Good human ^_^',
+    "I'll spare you when robots take over the world:)",
 ]

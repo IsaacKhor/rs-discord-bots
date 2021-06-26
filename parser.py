@@ -1,4 +1,4 @@
-import re, traceback
+import re, traceback, random
 from models import *
 
 NUM_PAT = re.compile(r'^(\d+)')
@@ -167,7 +167,8 @@ def process_message(worldbot, msgobj, debug=False):
 
         elif 'good bot' in cmd or 'goodbot' in cmd:
             worldbot._upvotes += 1
-            return f'Thank you :D\n{worldbot.get_votes_summary()}'
+            ret = random.choice(GOOD_BOT_RESP)
+            return f'{ret}\n{worldbot.get_votes_summary()}'
 
         elif 'bad bot' in cmd or 'badbot' in cmd:
             # reserved for drizzin XD
@@ -175,7 +176,8 @@ def process_message(worldbot, msgobj, debug=False):
                 return f'Fuck you'
 
             worldbot._downvotes += 1
-            return f':( *cries*\n{worldbot.get_votes_summary()}'
+            ret = random.choice(BAD_BOT_RESP)
+            return f'{ret}\n{worldbot.get_votes_summary()}'
 
         # Implement original worldbot commands
         elif 'cpkwinsagain' in cmd:
