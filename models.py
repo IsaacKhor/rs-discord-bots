@@ -109,6 +109,21 @@ P2P_WORLDS = [
     252,257,258,259
 ]
 
+# Worlds like 48, 52, legacy, and foreign language worlds
+# They still exist so we allow them, but they are hidden by default
+HIDDEN_WORLDS = [
+    # Legacy
+    18, 97, 115, 137,
+    # Skill/vip restricted
+    48, 52,
+    # Portugese
+    47, 75, 
+    # German
+    102, 121,
+    # French
+    118,
+]
+
 
 class World:
     """
@@ -203,17 +218,7 @@ class World:
         return bool(other.loc or other.state or other.tents or other.time or other.notes)
 
     def should_show(self):
-        # Show all worlds instead of hiding away worlds with no info
-        # Discussion held 24 jun 2021, scouts wanted easy access to a list
-        # of worlds for which we have no info instead of having to manually
-        # check. This way it's apparent which worlds are available
-        # for scouting
-        return True
-        # return not (self.state == WorldState.NOINFO and
-        #         self.loc == Location.UNKNOWN and
-        #         self.tents == None and
-        #         self.time == None and
-        #         self.notes == None)
+        return not self.num in HIDDEN_WORLDS
 
 
 GUIDE_STR = ["""
