@@ -84,7 +84,7 @@ class WorldBot:
 
     def get_active_for_loc(self, loc):
         return ','.join([w.get_num_summary() for w in self.get_worlds()
-            if w.loc == loc and w.should_show() and w.state != WorldState.DEAD])
+            if w.loc == loc and w.is_visible() and w.state != WorldState.DEAD])
 
     # Summary output
     def get_current_status(self):
