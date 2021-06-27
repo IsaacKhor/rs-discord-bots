@@ -19,6 +19,7 @@ CHANNEL_HELP = 842186485200584754
 CHANNEL_NOTIFY = 842527669085667408
 
 ROLE_WBS_NOTIFY = 484721172815151114
+ROLE_HOST = 292206099833290752
 
 conn = aiohttp.TCPConnector(ssl=False)
 client = commands.Bot(connector=conn, command_prefix='.')
@@ -118,6 +119,7 @@ async def notify_wave():
 # The rest are handled in the worldbot module itself
 
 @client.command(name='debug', brief='Shows debug information')
+@commands.is_owner()
 async def debug(ctx):
     msg = bot.get_debug_info()
     if DEBUG:
@@ -132,19 +134,43 @@ async def version(ctx):
 
 
 @client.command(name='guide', brief='Show guide')
+@commands.is_owner()
 async def version(ctx):
     for s in GUIDE_STR:
         await ctx.send(s)
 
 
 @client.command(name='reset', brief='Reset bot state')
+@commands.has_role(ROLE_HOST)
 async def reset(ctx):
+    """
+    Resets the bot. This will reset the following:
+
+    - World states
+    - Host, anti, and scouts
+    - Participants
+    - In-game FC (back to 'wbs united')
+
+    This will NOT reset the following:
+
+    - Ignore mode
+    - Upvote/downvote counts
+
+    Explanation of each field in the summary:
+    - Host: whoever set themselves as `.host`
+    - Scout/anti: people who used `.scout` and `.anti`
+    - Worlds: list of worlds added with `.call`
+    - Participants: list of users who joined the voice call during wave
+
+    This command is only available to hosts.
+    """
     summary = bot.get_wave_summary()
     bot.reset_state()
     await ctx.send(summary)
 
 
 @client.command(name='resetvotes', brief='Reset vote counts')
+@commands.is_owner()
 async def reset_votes(ctx):
     bot._upvotes = 0
     bot._downvotes = 0
@@ -152,9 +178,14 @@ async def reset_votes(ctx):
 
 
 @client.command(name='fc', brief='Set new in-game fc')
-async def fc(ctx, fc_name: str):
+@commands.has_role(ROLE_HOST)
+async def fc(ctx, *, fc_name: str):
+    """
+    Sets the in-game fc name for people to join.
+    Only available to hosts.
+    """
     bot.fcnanme = fc_name
-    await ctx.send(f'Setting FC to: {bot.fcnanme}')
+    await ctx.send(f"Setting FC to: '{bot.fcnanme}'")
 
 
 @client.command(name='host', brief='Set host')
@@ -193,12 +224,23 @@ async def wbs(ctx):
 @client.command(name='take', brief='Assign yourself some worlds')
 async def take(ctx, numworlds: int = 5, location: str = 'unk'):
     """
-    Grabs `numworlds` unassigned worlds of location `location` 
-    with no information except location available and marks them
-    as assigned. The intended workflow is for a scout to 
-    `take 5 unk` to assign themselves 5 worlds of unknown 
-    location and then scout those worlds, to prevent
-    scouts from scouting the same worlds.
+    Assign worlds to yourself. This will take `numworlds`
+    unassigned worlds from the specified location that
+    have no other information about them and assign
+    them to the caller of this command.
+
+    The intended way this is used is for each scout to
+    `take` some worlds, which will then assign those
+    worlds to them for scouting. Other scouts cannot
+    get worlds already assigned, so this way we ensure
+    there is no overlap amongst scouted worlds.
+
+    Examples:
+     - `take` with no arguments takes 5 unknown location worlds
+     - `take 5 elm` to take 5 elms that haven't been scouted
+
+    When there are no worlds left to scout, this command
+    will left the caller know and stop returning worlds.
 
     `numworlds` must be >=1
     `location` must be `elm|rdi|dwf|unk`, defaults to unk
@@ -212,15 +254,13 @@ async def take(ctx, numworlds: int = 5, location: str = 'unk'):
 
 
 @client.command(name='exit', brief='Kill the bot')
+@commands.is_owner()
 async def exit(ctx):
     """ 
     Kills the bot completely. The bot cannot be restarted without
     admin intervention. Can only be used by Elk.
     """
     # I'm the only one that gets to do this
-    if ctx.author.id != 251380099801284619:
-        await ctx.send(f'Only Elk gets to do this.')
-        return
     await ctx.send('Exiting gracefully.')
     await client.close()
     return
