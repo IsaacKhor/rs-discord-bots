@@ -146,14 +146,6 @@ def process_message(worldbot, msgobj, debug=False):
     try:
         cmd = text.strip().lower()
 
-        # If we're in ignore mode, just ignore everything
-        # except for the command letting us out of it
-        if worldbot.ignoremode:
-            if cmd == '.ignoremode disable':
-                worldbot.ignoremode = False
-                return f'Returning to normal mode'
-            return
-
         if cmd.startswith('.ignoremode'):
             worldbot.ignoremode = True
             return f'Going into ignore mode. Use `.ignoremode disable` to get out.'

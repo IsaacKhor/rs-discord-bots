@@ -8,7 +8,7 @@ import worldbot, parser
 from wbstime import *
 from models import GUIDE_STR
 
-VERSION = '3.10.5'
+VERSION = '3.10.6'
 
 WBS_UNITED_ID = 261802377009561600
 
@@ -227,6 +227,12 @@ async def on_message(msgobj):
     msglog.write(f'{msgobj.author.display_name}: {msgobj.content}\n')
     if DEBUG:
         print(f'{msgobj.author.display_name}: {msgobj.content}')
+    
+    if bot.ignoremode:
+        if msgobj.content == '.ignoremode disable':
+            bot.ignoremode = False
+            await msgobj.channel.send('Ignoremode disabled. Back to normal mode.')
+        return
 
     # We only continue on to process bot commands if the return is falsy
     response = parser.process_message(bot, msgobj, DEBUG)
