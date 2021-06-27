@@ -124,7 +124,7 @@ class WorldBot:
         Scouts: {scoutstr}
         Anti: {antistr}
         Worlds: {callhist}
-        Participants: {', '.join(self.participants)}
+        Participants: {', '.join(sorted(self.participants))}
         """
         return inspect.cleandoc(ret)
 
