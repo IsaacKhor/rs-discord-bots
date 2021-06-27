@@ -8,7 +8,7 @@ import worldbot, parser
 from wbstime import *
 from models import GUIDE_STR
 
-VERSION = '3.10.6'
+VERSION = '3.10.7'
 
 WBS_UNITED_ID = 261802377009561600
 
@@ -100,11 +100,10 @@ async def notify_wave():
         _, delta = time_until_wave(timedelta(minutes=-15), now)
         await asyncio.sleep(delta.seconds)
 
-        # We put the actual notification after the slee because this way,
+        # We put the actual notification after the sleep because this way,
         # the 1st time the loop is run we don't immediately notify everybody
         # on bot startup, instead we wait until the correct time
         if bot.is_ignoremode():
-            await send_to_channel(CHANNEL_BOT_LOG, 'Not notifying due to ignore mode')
             continue
 
         await send_to_channel(CHANNEL_NOTIFY,
@@ -212,6 +211,21 @@ async def take(ctx, numworlds: int = 5, location: str = 'unk'):
     await ctx.send(ret, reference=ctx.message, mention_author=True)
 
 
+@client.command(name='exit', brief='Kill the bot')
+async def exit(ctx):
+    """ 
+    Kills the bot completely. The bot cannot be restarted without
+    admin intervention. Can only be used by Elk.
+    """
+    # I'm the only one that gets to do this
+    if ctx.author.id != 251380099801284619:
+        await ctx.send(f'Only Elk gets to do this.')
+        return
+    await ctx.send('Exiting gracefully.')
+    await client.close()
+    return
+
+
 @client.event
 async def on_message(msgobj):
     # Don't respond to bot messages to prevent infinite loops
@@ -228,7 +242,7 @@ async def on_message(msgobj):
     if DEBUG:
         print(f'{msgobj.author.display_name}: {msgobj.content}')
     
-    if bot.ignoremode:
+    if bot.is_ignoremode():
         if msgobj.content == '.ignoremode disable':
             bot.ignoremode = False
             await msgobj.channel.send('Ignoremode disabled. Back to normal mode.')
@@ -245,8 +259,6 @@ async def on_message(msgobj):
             for s in response:
                 await msgobj.channel.send(s)
     else:
-        if DEBUG:
-            print('Passing off to discord.py')
         await client.process_commands(msgobj)
 
 

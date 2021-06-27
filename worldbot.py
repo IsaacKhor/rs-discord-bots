@@ -111,7 +111,7 @@ class WorldBot:
         """)
 
         if all_active_str:
-            ret += f'\n\n```\n{all_active_str}\n```'
+            ret += f'\n```\n{all_active_str}\n```'
 
         return ret
 
