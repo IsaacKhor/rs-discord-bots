@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import aiohttp, atexit, asyncio, os, textwrap, discord
+import aiohttp, atexit, asyncio, os, textwrap, discord, traceback
 from datetime import datetime, timedelta, timezone
 from discord.ext import commands
 
@@ -8,7 +8,7 @@ import worldbot, parser
 from wbstime import *
 from models import GUIDE_STR
 
-VERSION = '3.12.2'
+VERSION = '3.12.3'
 
 WBS_UNITED_ID = 261802377009561600
 
@@ -19,9 +19,11 @@ CHANNEL_HELP = 842186485200584754
 CHANNEL_NOTIFY = 842527669085667408
 
 ROLE_WBS_NOTIFY = 484721172815151114
+ROLE_VIS_WAX = 858911901492445184
 ROLE_HOST = 292206099833290752
 
 REACT_CHECK = '✅'
+REACT_CROSS = '❌'
 
 conn = aiohttp.TCPConnector(ssl=False)
 client = commands.Bot(connector=conn, command_prefix='.')
@@ -200,7 +202,7 @@ async def reset_votes(ctx):
     await ctx.send('Stop the count :o')
 
 
-@client.command(name='recordparts', brief='Snapshot list of ppl in vc')
+@client.command(name='recordparts', brief='Snapshot list of ppl in vc', enabled=False)
 @commands.has_role(ROLE_HOST)
 async def record_participants(ctx):
     """
@@ -351,6 +353,14 @@ async def on_message(msgobj):
                 await msgobj.channel.send(s)
     else:
         await client.process_commands(msgobj)
+
+
+@client.on_command_error
+async def on_err(ctx, err):
+    traceback.print_exception(type(err), err, err.__traceback__, file=sys.stderr)
+
+    await ctx.message.add_reaction(REACT_CROSS)
+    await send_to_channel(CHANNEL_BOT_LOG, str(err))
 
 
 import sys
