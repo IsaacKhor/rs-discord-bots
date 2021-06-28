@@ -96,6 +96,7 @@ def parse_update_command(msg):
 
             update.time = WbsTime.get_abs_minute_or_cur(num).add_mins(10)
             update.state = WorldState.ALIVE
+            time_found = True
             continue
 
         # Syntax: 'broken :02', same syntax as beamed
@@ -106,6 +107,7 @@ def parse_update_command(msg):
 
             update.time = WbsTime.get_abs_minute_or_cur(num).add_mins(5)
             update.state = WorldState.ALIVE
+            time_found = True
             continue
 
         # Syntax: 'xx:xx gc', the seconds and gc part optional
