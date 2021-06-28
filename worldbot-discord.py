@@ -8,7 +8,7 @@ import worldbot, parser
 from wbstime import *
 from models import GUIDE_STR
 
-VERSION = '3.11.0'
+VERSION = '3.12.0'
 
 WBS_UNITED_ID = 261802377009561600
 
@@ -251,6 +251,13 @@ async def anti(ctx):
 @client.command(name='call', brief='Add msg to call history')
 async def call(ctx, *, msg: str):
     bot.worldhist.append(msg)
+    await ctx.message.add_reaction(REACT_CHECK)
+
+
+@client.command(name='dead', brief='Mark worlds as dead')
+async def mark_dead(ctx, *worlds):
+    for w in worlds:
+        bot.get_world(w).mark_dead()
     await ctx.message.add_reaction(REACT_CHECK)
 
 

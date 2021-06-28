@@ -170,6 +170,9 @@ class World:
         return self.loc == Location.UNKNOWN and self.state == WorldState.NOINFO \
             and self.tents == None and self.time == None and self.notes == None
 
+    def mark_dead(self):
+        self.state = WorldState.DEAD
+
     def get_remaining_time(self):
         if self.time == None:
             return -1
