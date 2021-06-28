@@ -124,8 +124,9 @@ class WorldBot:
         Scouts: {scoutstr}
         Anti: {antistr}
         Worlds: {callhist}
-        Participants: {', '.join(sorted(self.participants))}
         """
+        #Participants: {', '.join(sorted(self.participants))}
+
         return inspect.cleandoc(ret)
 
     def is_registry_empty(self):

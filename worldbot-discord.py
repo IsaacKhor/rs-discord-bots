@@ -8,7 +8,7 @@ import worldbot, parser
 from wbstime import *
 from models import GUIDE_STR
 
-VERSION = '3.12.1'
+VERSION = '3.12.2'
 
 WBS_UNITED_ID = 261802377009561600
 
@@ -183,7 +183,7 @@ async def reset(ctx):
     - Host: whoever set themselves as `.host`
     - Scout/anti: people who used `.scout` and `.anti`
     - Worlds: list of worlds added with `.call`
-    - Participants: list of users who joined the voice call during wave
+    - Participants NO LONGER SHOWN
 
     This command is only available to hosts.
     """
