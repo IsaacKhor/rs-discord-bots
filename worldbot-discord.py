@@ -8,7 +8,7 @@ import worldbot, parser
 from wbstime import *
 from models import GUIDE_STR
 
-VERSION = '3.10.7'
+VERSION = '3.11.0'
 
 WBS_UNITED_ID = 261802377009561600
 
@@ -20,6 +20,8 @@ CHANNEL_NOTIFY = 842527669085667408
 
 ROLE_WBS_NOTIFY = 484721172815151114
 ROLE_HOST = 292206099833290752
+
+REACT_CHECK = '✅'
 
 conn = aiohttp.TCPConnector(ssl=False)
 client = commands.Bot(connector=conn, command_prefix='.')
@@ -133,6 +135,27 @@ async def version(ctx):
     await ctx.send(f'Bot version v{VERSION}. Written by CrafyElk :D')
 
 
+@client.command(name='ignoremode', brief='Enter ignoremode')
+@commands.has_role(ROLE_HOST)
+async def ignoremode(ctx):
+    """
+    Enter ignoremode. In ignoremode, the bot ignores all
+    input except for `.ignoremode disable` and will not 
+    send out any messages.
+
+    This is used for dev only, to silence the production
+    bot when the testing bot is running to prevent 2 
+    replies to each message.
+
+    This can also be used when the bot is misbehaving 
+    and we need to silence it. 
+
+    This command is only available to hosts.
+    """
+    bot.ignoremode = True
+    await ctx.send(f'Going into ignore mode. Use `.ignoremode disable` to get out.')
+
+
 @client.command(name='guide', brief='Show guide')
 @commands.is_owner()
 async def version(ctx):
@@ -177,6 +200,22 @@ async def reset_votes(ctx):
     await ctx.send('Stop the count :o')
 
 
+@client.command(name='recordparts', brief='Snapshot list of ppl in vc')
+@commands.has_role(ROLE_HOST)
+async def record_participants(ctx):
+    """
+    The list of participants is gathered by adding everybody
+    *joins* the vc within 20 mins of wave. In case the bot
+    is reset after people join vc, use this command to add
+    everybody currently on vc to the list of participants.
+
+    Only available to hosts.
+    """
+    vc = client.get_channel(CHANNEL_VOICE)
+    for m in vc.members:
+        bot.add_participant(m.display_name)
+
+
 @client.command(name='fc', brief='Set new in-game fc')
 @commands.has_role(ROLE_HOST)
 async def fc(ctx, *, fc_name: str):
@@ -194,25 +233,25 @@ async def host(ctx, host:str = ''):
     if host:
         bot.host = host
     bot.host = ctx.author.display_name
-    await ctx.send(f'Setting host to: {bot.host}')
+    await ctx.message.add_reaction(REACT_CHECK)
 
 
 @client.command(name='scout', brief='Add yourself to scout list')
 async def scout(ctx):
     bot.scoutlist.add(ctx.author.display_name)
-    await ctx.send(f'Adding {ctx.author.display_name} to scout list')
+    await ctx.message.add_reaction(REACT_CHECK)
 
 
 @client.command(name='anti', brief='Add yourself to anti list')
 async def anti(ctx):
     bot.antilist.add(ctx.author.display_name)
-    await ctx.send(f'Adding {ctx.author.display_name} to anti list')
+    await ctx.message.add_reaction(REACT_CHECK)
 
 
 @client.command(name='call', brief='Add msg to call history')
 async def call(ctx, *, msg: str):
     bot.worldhist.append(msg)
-    await ctx.send(f'Adding {msg} to call history')
+    await ctx.message.add_reaction(REACT_CHECK)
 
 
 @client.command(name='wbs', brief='Show next wave information')
@@ -261,7 +300,7 @@ async def exit(ctx):
     admin intervention. Can only be used by Elk.
     """
     # I'm the only one that gets to do this
-    await ctx.send('Exiting gracefully.')
+    await ctx.message.add_reaction(REACT_CHECK)
     await client.close()
     return
 
@@ -276,6 +315,10 @@ async def on_message(msgobj):
     # Only respond to messages in text channels that are the bot and the help
     istext = isinstance(msgobj.channel, discord.TextChannel)
     if istext and not (msgobj.channel.id in [CHANNEL_WAVE_CHAT, CHANNEL_HELP]):
+        return
+
+    # Ignore empty messages (image-only)
+    if not msgobj.content:
         return
 
     msglog.write(f'{msgobj.author.display_name}: {msgobj.content}\n')

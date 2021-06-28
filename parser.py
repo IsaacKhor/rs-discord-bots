@@ -146,11 +146,7 @@ def process_message(worldbot, msgobj, debug=False):
     try:
         cmd = text.strip().lower()
 
-        if cmd.startswith('.ignoremode'):
-            worldbot.ignoremode = True
-            return f'Going into ignore mode. Use `.ignoremode disable` to get out.'
-
-        elif cmd == 'list':
+        if cmd == 'list':
             worldbot.update_world_states()
             return worldbot.get_current_status()
 
