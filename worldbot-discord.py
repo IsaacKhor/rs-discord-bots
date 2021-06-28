@@ -19,7 +19,6 @@ CHANNEL_HELP = 842186485200584754
 CHANNEL_NOTIFY = 842527669085667408
 
 ROLE_WBS_NOTIFY = 484721172815151114
-ROLE_VIS_WAX = 858911901492445184
 ROLE_HOST = 292206099833290752
 
 REACT_CHECK = '✅'
@@ -355,10 +354,8 @@ async def on_message(msgobj):
         await client.process_commands(msgobj)
 
 
-@client.on_command_error
+@client.listen('on_command_error')
 async def on_err(ctx, err):
-    traceback.print_exception(type(err), err, err.__traceback__, file=sys.stderr)
-
     await ctx.message.add_reaction(REACT_CROSS)
     await send_to_channel(CHANNEL_BOT_LOG, str(err))
 
