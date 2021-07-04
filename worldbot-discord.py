@@ -8,7 +8,7 @@ import worldbot, parser
 from wbstime import *
 from models import GUIDE_STR
 
-VERSION = '3.12.4'
+VERSION = '3.13.0'
 
 WBS_UNITED_ID = 261802377009561600
 
@@ -299,6 +299,24 @@ async def take(ctx, numworlds: int = 5, location: str = 'unk'):
         await ctx.send(f'Invalid numworlds: {numworlds}')
     ret = bot.take_worlds(numworlds, parser.convert_location(location))
     await ctx.send(ret, reference=ctx.message, mention_author=True)
+
+
+@client.command(name='taked', brief='Take and mark dead')
+async def take_and_mark_dead(ctx, numworlds: int = 5, location: str = 'unk'):
+    """
+    Same as .take, but in additionally marks all worlds
+    assigned to the caller that don't have any other
+    information to be dead as well.
+
+    The intended usage is for a scout to be able to
+    call .taked and just call worlds that are
+    interesting in some way (namely not dead). If
+    the scout doesn't report anything about a
+    world by the time they call .taked again, we
+    may safely assume that they are dead and mark
+    the worlds as such.
+    """
+    pass
 
 
 @client.command(name='exit', brief='Kill the bot')
