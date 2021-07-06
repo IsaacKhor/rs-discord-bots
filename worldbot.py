@@ -140,16 +140,22 @@ class WorldBot:
     def add_participant(self, display_name):
         self.participants.add(display_name)
 
-    def take_worlds(self, numworlds, loc):
+    def mark_noinfo_dead_for_assignee(self, authorid: int):
+        worlds = [w for w in self.get_worlds() if w.assigned == authorid ]
+        for w in worlds:
+            w.mark_dead()
+        pass
+
+    def take_worlds(self, numworlds: int, loc: str, authorid: int):
         worlds = [w for w in self.get_worlds() 
             if w.loc == loc 
             and w.state == WorldState.NOINFO
-            and w.assigned == False
+            and w.assigned == None
             and w.is_visible()]
 
         assigning = worlds[:numworlds]
         for w in assigning:
-            w.assigned = True
+            w.assigned = authorid
 
         ret = ', '.join([str(w.num) for w in assigning])
         if len(assigning) < numworlds:

@@ -269,8 +269,8 @@ async def wbs(ctx):
     await ctx.send(next_wave_info())
 
 
-@client.command(name='take', brief='Assign yourself some worlds')
-async def take(ctx, numworlds: int = 5, location: str = 'unk'):
+@client.command(name='take', brief='Assign yourself some worlds', aliases=['t'])
+async def take(ctx: commands.Context, numworlds: int = 5, location: str = 'unk'):
     """
     Assign worlds to yourself. This will take `numworlds`
     unassigned worlds from the specified location that
@@ -297,11 +297,14 @@ async def take(ctx, numworlds: int = 5, location: str = 'unk'):
         await ctx.send(f'Invalid location: {location}')
     if numworlds < 1:
         await ctx.send(f'Invalid numworlds: {numworlds}')
-    ret = bot.take_worlds(numworlds, parser.convert_location(location))
+
+    ret = bot.take_worlds(
+        numworlds, parser.convert_location(location), ctx.author.id)
+
     await ctx.send(ret, reference=ctx.message, mention_author=True)
 
 
-@client.command(name='taked', brief='Take and mark dead')
+@client.command(name='taked', brief='Take and mark dead', aliases=['td'])
 async def take_and_mark_dead(ctx, numworlds: int = 5, location: str = 'unk'):
     """
     Same as .take, but in additionally marks all worlds
@@ -316,7 +319,8 @@ async def take_and_mark_dead(ctx, numworlds: int = 5, location: str = 'unk'):
     may safely assume that they are dead and mark
     the worlds as such.
     """
-    pass
+    bot.mark_noinfo_dead_for_assignee(ctx.author.id)
+    await take(ctx, numworlds, location)
 
 
 @client.command(name='exit', brief='Kill the bot')
