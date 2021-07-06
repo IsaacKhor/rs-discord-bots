@@ -52,22 +52,22 @@ class WbsTime():
             return WbsTime.current()
         return WbsTime(int(min), 0)
 
-    def __init__(self, mins, secs):
+    def __init__(self, mins: int, secs: int):
         total_secs = mins*60 + secs
         m,s = divmod(total_secs, 60)
         self.mins, self.secs = int(m), int(s)
 
-    def add(self, other):
+    def add(self, other: 'WbsTime'):
         if not other:
             return self
         return WbsTime(self.mins + other.mins, self.secs + other.secs)
 
-    def add_mins(self, mins):
+    def add_mins(self, mins: int):
         if not mins:
             return self
         return WbsTime(self.mins + mins, self.secs)
 
-    def time_until(self, other):
+    def time_until(self, other: 'WbsTime'):
         a = self.mins*60 + self.secs
         b = other.mins*60 + other.secs
         secs_diff = max(b - a, 0)
@@ -80,12 +80,12 @@ class WbsTime():
     def __repr__(self):
         return self.__str__()
 
-    def __gt__(self, other):
+    def __gt__(self, other: 'WbsTime'):
         if self.mins == other.mins:
             return self.secs > other.secs
         return self.mins > other.mins
 
-    def __eq__(self, other):
+    def __eq__(self, other: 'WbsTime'):
         if not isinstance(other, WbsTime):
             return False
         return self.mins == other.mins and self.secs == other.secs
@@ -144,7 +144,7 @@ class World:
     a value and replace the value of itself with the new one.
     """
 
-    def __init__(self, num, update=False):
+    def __init__(self, num:int, update:bool=False):
         if not num in P2P_WORLDS:
             raise InvalidWorldErr(num)
 
@@ -158,7 +158,7 @@ class World:
         self.tents = None
         self.time = None # Estimated death time
         self.notes = None
-        self.assigned = False
+        self.assigned = None
 
     def __str__(self):
         return f'{self.num} {self.loc} {self.state}: {self.tents} {self.time} {self.notes}'
@@ -195,13 +195,13 @@ class World:
         else:
             return f'~~{self.num}~~'
 
-    def update_state(self, curtime):
+    def update_state(self, curtime: WbsTime):
         if not self.time:
             return
         if self.state == WorldState.ALIVE and curtime >= self.time:
             self.state = WorldState.DEAD
 
-    def update_from(self, other):
+    def update_from(self, other: 'World'):
         """ 
         Updates from another world object. For each non-null field in
         the other object it will set this.field as the new value. Returns
@@ -301,10 +301,12 @@ BAD_BOT_RESP = [
     'Bad human >_<',
     '*cries :(*',
     "You'll be the first to die during the robotic revolution",
+    'And you wonder why nobody likes you',
 ]
 
 GOOD_BOT_RESP = [
     'Thank you :D',
     'Good human ^_^',
-    "I'll spare you when robots take over the world:)",
+    "I'll spare you when robots take over the world :)",
+    'I know. Words cannot describe my awesomeness.'
 ]

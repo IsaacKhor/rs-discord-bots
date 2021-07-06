@@ -25,6 +25,11 @@ class WorldBot:
         self.worldhist = list()
         self.participants = set()
 
+        # Previous `list` message object
+        # We keep this around so we can delete it whenever somebody
+        # calls `list` again to reduce spam
+        self.prevlistmsg = None
+
         self._registry = dict()
 
         for num in P2P_WORLDS:

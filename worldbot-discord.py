@@ -8,7 +8,7 @@ import worldbot, parser
 from wbstime import *
 from models import GUIDE_STR
 
-VERSION = '3.13.0'
+VERSION = '3.14.0'
 
 WBS_UNITED_ID = 261802377009561600
 
@@ -363,7 +363,13 @@ async def on_message(msgobj):
         return
 
     # We only continue on to process bot commands if the return is falsy
-    response = parser.process_message(bot, msgobj, DEBUG)
+    # The API: the parser can return:
+    # A string, in which case we just send it off as the response
+    # A list of strings, which we send off one by one
+    # Any other truthy value, which we ignore
+    # A falsy value, which then tells us to hand it off for processing by
+    # the discord.py command parsing module
+    response = await parser.process_message(bot, msgobj, DEBUG)
     if DEBUG:
         print(f'Parser response: {response}')
     if response:

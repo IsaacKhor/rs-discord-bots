@@ -1,4 +1,7 @@
 import re, traceback, random
+from worldbot import WorldBot
+
+import discord
 from models import *
 
 NUM_PAT = re.compile(r'^(\d+)')
@@ -142,15 +145,37 @@ def parse_update_command(msg):
     return update
 
 
-def process_message(worldbot, msgobj, debug=False):
-    text = msgobj.content
-
+async def process_message(worldbot: WorldBot, msgobj: discord.Message, debug=False):
+    """
+    The API: the parser can return:
+    A string, in which case we just send it off as the response
+    A list of strings, which we send off one by one
+    Any other truthy value, which we ignore
+    A falsy value, which then tells us to hand it off for processing by
+    the discord.py command parsing module
+    """
     try:
-        cmd = text.strip().lower()
+        cmd = msgobj.content.strip().lower()
 
         if cmd == 'list':
+            """
+            The `list` command does the following:
+            - Update world times
+            - Delete the output of the previoust `list` command
+            - Output the world state summary
+            - Delete the invocation of `list` itself
+            """
             worldbot.update_world_states()
-            return worldbot.get_current_status()
+
+            if worldbot.prevlistmsg:
+                await worldbot.prevlistmsg.delete()
+            
+            resp = worldbot.get_current_status()
+            msg = await msgobj.channel.send(resp)
+            worldbot.prevlistmsg = msg
+
+            await msgobj.delete()
+            return True
 
         elif 'fc' in cmd and '?' in cmd:
             return f'Using FC: "{worldbot.fcnanme}"'
@@ -174,7 +199,7 @@ def process_message(worldbot, msgobj, debug=False):
             return msgobj.author.display_name + ' you should STFU!'
 
         elif cmd[0] in '0123456789':
-            update = parse_update_command(text)
+            update = parse_update_command(msgobj.content)
             ret = worldbot.update_world(update)
             if debug:
                 print(f'Found update command, got "{update}"')
