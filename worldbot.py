@@ -146,7 +146,7 @@ class WorldBot:
         self.participants.add(display_name)
 
     def mark_noinfo_dead_for_assignee(self, authorid: int):
-        worlds = [w for w in self.get_worlds() if w.assigned == authorid ]
+        worlds = [w for w in self.get_worlds() if w.assigned == authorid and w.state == WorldState.DEAD]
         for w in worlds:
             w.mark_dead()
         pass
