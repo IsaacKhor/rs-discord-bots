@@ -8,9 +8,9 @@ import worldbot, parser
 from wbstime import *
 from models import GUIDE_STR
 
-VERSION = '3.14.2'
+VERSION = '3.15.0'
 
-WBS_UNITED_ID = 261802377009561600
+GUILD_WBS_UNITED = 261802377009561600
 
 CHANNEL_WAVE_CHAT = 803855255933681664
 CHANNEL_VOICE = 780814756713594951
@@ -20,14 +20,19 @@ CHANNEL_NOTIFY = 842527669085667408
 
 ROLE_WBS_NOTIFY = 484721172815151114
 ROLE_HOST = 292206099833290752
+ROLE_TEXT_PERM = 880185096055976016
 
 REACT_CHECK = '✅'
 REACT_CROSS = '❌'
 
 conn = aiohttp.TCPConnector(ssl=False)
+
+# globals
 client = commands.Bot(connector=conn, command_prefix='.')
 bot = worldbot.WorldBot()
 msglog = open('messages.log', 'a', encoding='utf-8')
+guildobj = None
+role_textperm_obj = None
 
 DEBUG = 'WORLDBOT_DEBUG' in os.environ
 
@@ -54,6 +59,10 @@ async def on_ready():
     client.loop.create_task(autoreset_bot())
     client.loop.create_task(notify_wave())
 
+    global guildobj, role_textperm_obj
+    guildobj = client.get_guild(GUILD_WBS_UNITED)
+    role_textperm_obj = guildobj.get_role(ROLE_TEXT_PERM)
+
 
 @client.event
 async def on_voice_state_update(member, before, after):
@@ -71,6 +80,11 @@ async def on_voice_state_update(member, before, after):
         _, delta = time_until_wave(timedelta(0))
         if delta.seconds < 20 * 60 or delta.seconds > 400 * 60:
             bot.add_participant(member.display_name)
+
+        # Give them the role to view wave text
+        # Only give when not in ignoremode so multiple bots don't conflict
+        if not bot.is_ignoremode():
+            await member.add_roles(role_textperm_obj, reason='Joined voice', atomic=True)
         
         await get_channel(CHANNEL_BOT_LOG).send(
             f'{nowf}: __"{member.display_name}" joined__ voice')
@@ -79,6 +93,12 @@ async def on_voice_state_update(member, before, after):
     if (before.channel and
         before.channel.id == CHANNEL_VOICE and
         after.channel == None):
+
+        # Remove perm to view wave text
+        # Only do when not in ignoremode so multiple bots don't conflict
+        if not bot.is_ignoremode():
+            await member.remove_roles(role_textperm_obj, reason='Left voice', atomic=True)
+
         await get_channel(CHANNEL_BOT_LOG).send(
             f'{nowf}: **"{member.display_name}" left** voice')
 
