@@ -8,7 +8,7 @@ import worldbot, parser
 from wbstime import *
 from models import GUIDE_STR
 
-VERSION = '3.15.0'
+VERSION = '3.15.1'
 
 GUILD_WBS_UNITED = 261802377009561600
 
@@ -17,6 +17,9 @@ CHANNEL_VOICE = 780814756713594951
 CHANNEL_BOT_LOG = 804209525585608734
 CHANNEL_HELP = 842186485200584754
 CHANNEL_NOTIFY = 842527669085667408
+CHANNEL_BOTSPAM = 318793375136481280
+
+RESPONSE_CHANNELS = [CHANNEL_HELP, CHANNEL_WAVE_CHAT, CHANNEL_BOTSPAM]
 
 ROLE_WBS_NOTIFY = 484721172815151114
 ROLE_HOST = 292206099833290752
@@ -365,7 +368,7 @@ async def on_message(msgobj):
 
     # Only respond to messages in text channels that are the bot and the help
     istext = isinstance(msgobj.channel, discord.TextChannel)
-    if istext and not (msgobj.channel.id in [CHANNEL_WAVE_CHAT, CHANNEL_HELP]):
+    if istext and not (msgobj.channel.id in RESPONSE_CHANNELS):
         return
 
     # Ignore empty messages (image-only)
