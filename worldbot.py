@@ -18,7 +18,7 @@ class WorldBot:
     def reset_state(self):
         # Only thing of note is that reset shouldn't reset ignoremode
         # and the vote counts
-        self.fcnanme = DEFAULT_FC
+        self.fcname = DEFAULT_FC
         self.host = ''
         self.antilist = set()
         self.scoutlist = set()

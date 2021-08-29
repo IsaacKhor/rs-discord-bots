@@ -7,3 +7,4 @@ messages.log
 api.log
 test.py
 worldbot-state.json
+secrets

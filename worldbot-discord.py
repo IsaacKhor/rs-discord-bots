@@ -8,7 +8,7 @@ import worldbot, parser
 from wbstime import *
 from models import GUIDE_STR
 
-VERSION = '3.15.1'
+VERSION = '3.16.0'
 
 GUILD_WBS_UNITED = 261802377009561600
 
@@ -240,15 +240,19 @@ async def record_participants(ctx):
         bot.add_participant(m.display_name)
 
 
-@client.command(name='fc', brief='Set new in-game fc')
-@commands.has_role(ROLE_HOST)
-async def fc(ctx, *, fc_name: str):
+@client.command(name='fc', brief='Set/list in-game fc')
+async def fc(ctx, *, fc_name: str = ''):
     """
-    Sets the in-game fc name for people to join.
-    Only available to hosts.
+    List the current in-game fc that people need to join.
+
+    When called with an argument, sets the fc
+    instead. Only available to hosts.
     """
-    bot.fcnanme = fc_name
-    await ctx.send(f"Setting FC to: '{bot.fcnanme}'")
+    if not fc_name:
+        await ctx.send(f"FC: '{bot.fcname}'")
+    else:
+        bot.fcname = fc_name
+        await ctx.send(f"Setting FC to: '{bot.fcname}'")
 
 
 @client.command(name='host', brief='Set host')
@@ -406,7 +410,9 @@ async def on_message(msgobj):
 
 
 @client.listen('on_command_error')
-async def on_err(ctx, err):
+async def on_err(ctx: commands.Context, err):
+    if isinstance(err, commands.CommandNotFound) and ctx.channel.id == CHANNEL_BOTSPAM:
+        return
     await ctx.message.add_reaction(REACT_CROSS)
     await send_to_channel(CHANNEL_BOT_LOG, str(err))
 
