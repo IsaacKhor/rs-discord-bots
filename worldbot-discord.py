@@ -8,7 +8,7 @@ import worldbot, parser
 from wbstime import *
 from models import GUIDE_STR
 
-VERSION = '3.16.0'
+VERSION = '3.17.0'
 
 GUILD_WBS_UNITED = 261802377009561600
 
@@ -156,7 +156,7 @@ async def debug(ctx):
 
 @client.command(name='version', brief='Show version')
 async def version(ctx):
-    await ctx.send(f'Bot version v{VERSION}. Written by CrafyElk :D')
+    await ctx.send(f'Bot version v{VERSION}. Written by CraftyElk :D')
 
 
 @client.command(name='ignoremode', brief='Enter ignoremode')
@@ -360,6 +360,17 @@ async def exit(ctx):
     # I'm the only one that gets to do this
     await ctx.message.add_reaction(REACT_CHECK)
     await client.close()
+    return
+
+
+@client.command(name='clear', brief='Delete previous messages')
+@commands.has_role(ROLE_HOST)
+async def clear(ctx: commands.Context, num: int):
+    """
+    Deletes the previous [num] messages from the channel
+    """
+    messages = await ctx.channel.history(limit=num).flatten()
+    await ctx.channel.delete_messages(messages)
     return
 
 
