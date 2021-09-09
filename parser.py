@@ -178,7 +178,7 @@ async def process_message(worldbot: WorldBot, msgobj: discord.Message, debug=Fal
             return True
 
         elif 'fc' in cmd and '?' in cmd:
-            return f'Using FC: "{worldbot.fcnanme}"'
+            return f'Using FC: "{worldbot.fcname}"'
 
         elif 'good bot' in cmd or 'goodbot' in cmd:
             worldbot._upvotes += 1
