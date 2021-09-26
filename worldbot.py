@@ -107,7 +107,7 @@ class WorldBot:
 
 
         ret = inspect.cleandoc(f"""
-        **Active** (unknown, *beaming*, __>3 mins__, ~~<3mins~~):
+        **Active** (unknown, *beaming*, __>3 mins__, ~~<3mins~~, \*suspicious):
         **DWF**: {active_dwfs}
         **ELM**: {active_elms}
         **RDI**: {active_rdis}

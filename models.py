@@ -159,9 +159,10 @@ class World:
         self.time = None # Estimated death time
         self.notes = None
         self.assigned = None
+        self.suspicious = False
 
     def __str__(self):
-        return f'{self.num} {self.loc} {self.state}: {self.tents} {self.time} {self.notes}'
+        return f'{self.num} {self.loc} {self.state}: {self.tents} {self.time} {self.suspicious} {self.notes}'
 
     def __repr__(self):
         return self.__str__()
@@ -182,18 +183,24 @@ class World:
         tent_str = '   ' if self.tents == None else self.tents
         notes_str = '' if self.notes == None else self.notes
         timestr = '__:__' if self.time == None else str(self.get_remaining_time())
-        return f'{self.num:3} {self.loc}: {timestr} {tent_str} {notes_str}'
+        susstr = '*' if self.suspicious else ' '
+        return f'{self.num:3} {self.loc}{susstr}: {timestr} {tent_str} {notes_str}'
 
     def get_num_summary(self):
         t = self.get_remaining_time()
+        ret = ''
         if self.state == WorldState.BEAMING:
-            return f'*{self.num}*'
+            ret = f'*{self.num}*'
         elif t == -1:
-            return f'{self.num}'
+            ret = f'{self.num}'
         elif t.mins >= 3:
-            return f'__{self.num}__'
+            ret = f'__{self.num}__'
         else:
-            return f'~~{self.num}~~'
+            ret = f'~~{self.num}~~'
+
+        if self.suspicious:
+            ret += '*'
+        return ret
 
     def update_state(self, curtime: WbsTime):
         if not self.time:
@@ -217,8 +224,10 @@ class World:
             self.time = other.time
         if other.notes:
             self.notes = other.notes
+        if other.suspicious:
+            self.suspicious = other.suspicious
 
-        return bool(other.loc or other.state or other.tents or other.time or other.notes)
+        return bool(other.loc or other.state or other.tents or other.time or other.notes or other.suspicious)
 
     def is_visible(self):
         return not self.num in HIDDEN_WORLDS

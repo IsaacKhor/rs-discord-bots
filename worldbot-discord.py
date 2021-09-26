@@ -8,7 +8,7 @@ import worldbot, parser
 from wbstime import *
 from models import GUIDE_STR
 
-VERSION = '3.17.2'
+VERSION = '3.18.0'
 
 GUILD_WBS_UNITED = 261802377009561600
 
@@ -133,8 +133,14 @@ async def notify_wave():
         if bot.is_ignoremode():
             continue
 
+        # Also include time of wave *after* the upcoming one for ease of access
+        now = datetime.now().astimezone(timezone.utc)
+        nextwave = get_next_wave_datetime(now + timedelta(minutes=60))
+        unixts = int(nextwave.timestamp())
+
         await send_to_channel(CHANNEL_NOTIFY,
-            f'<@&{ROLE_WBS_NOTIFY}> wave in 15 minutes. Please join at <#{CHANNEL_WAVE_CHAT}> and <#{CHANNEL_VOICE}>')
+            f'<@&{ROLE_WBS_NOTIFY}> wave in 15 minutes. Please join at <#{CHANNEL_WAVE_CHAT}> and <#{CHANNEL_VOICE}>\n' + 
+            f'The next wave will be at <t:{unixts}:F>, which is in <t:{unixts}:R> (dynamically updated).')
 
 
 ### ============

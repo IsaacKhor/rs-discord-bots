@@ -89,7 +89,9 @@ def parse_update_command(msg):
 
         elif is_location(cmd[0:3]):
             update.loc = convert_location(cmd[0:3])
-            cmd = cmd[3:]
+            cmd = remove_beginning('elm', cmd)
+            cmd = remove_beginning('rdi', cmd)
+            cmd = remove_beginning('dwf', cmd)
             continue
 
         # Syntax: 'beamed :02', space, colon, and time all optional
@@ -111,6 +113,15 @@ def parse_update_command(msg):
             update.time = WbsTime.get_abs_minute_or_cur(num).add_mins(5)
             update.state = WorldState.ALIVE
             time_found = True
+            continue
+
+        elif cmd.startswith('mg') or cmd.startswith('minigames') or cmd.startswith('sus') or cmd.startswith('*'):
+            cmd = remove_beginning('minigames', cmd)
+            cmd = remove_beginning('sus', cmd)
+            cmd = remove_beginning('mg', cmd)
+            cmd = remove_beginning('*', cmd)
+
+            update.suspicious = True
             continue
 
         # Syntax: 'xx:xx gc', the seconds and gc part optional
