@@ -8,7 +8,7 @@ import worldbot, parser
 from wbstime import *
 from models import GUIDE_STR
 
-VERSION = '3.17.1'
+VERSION = '3.17.2'
 
 GUILD_WBS_UNITED = 261802377009561600
 
@@ -367,9 +367,13 @@ async def exit(ctx):
 @commands.has_role(ROLE_HOST)
 async def clear(ctx: commands.Context, num: int):
     """
-    Deletes the previous [num] messages from the channel
+    Deletes the previous [num] messages from the channel. Will automatically
+    add 1 to the [num] passed in so the user doesn't have to also count the
+    `.clear x` command itself.
+
+    Can only be used by hosts.
     """
-    messages = await ctx.channel.history(limit=num).flatten()
+    messages = await ctx.channel.history(limit=num+1).flatten()
     await ctx.channel.delete_messages(messages)
     return
 
