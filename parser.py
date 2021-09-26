@@ -87,11 +87,45 @@ def parse_update_command(msg):
             cmd = cmd[3:]
             continue
 
+        # Tents could be shortened to 'hcs', 'hms', etc
+        # Or they could be manually specified 'herb con mine' etc, or both
         elif is_location(cmd[0:3]):
             update.loc = convert_location(cmd[0:3])
             cmd = remove_beginning('elm', cmd)
             cmd = remove_beginning('rdi', cmd)
             cmd = remove_beginning('dwf', cmd)
+            continue
+
+        elif cmd.startswith('herblore') or cmd.startswith('herb'):
+            cmd = remove_beginning('herblore', cmd)
+            cmd = remove_beginning('herb', cmd)
+            update.tents += 'h'
+            continue
+
+        elif cmd.startswith('construction') or cmd.startswith('cons') or cmd.startswith('con'):
+            cmd = remove_beginning('construction', cmd)
+            cmd = remove_beginning('cons', cmd)
+            cmd = remove_beginning('con', cmd)
+            update.tents += 'c'
+            continue
+
+        elif cmd.startswith('farming') or cmd.startswith('farm'):
+            cmd = remove_beginning('farming', cmd)
+            cmd = remove_beginning('farm', cmd)
+            update.tents += 'f'
+            continue
+
+        elif cmd.startswith('mining') or cmd.startswith('mine') or cmd.startswith('min'):
+            cmd = remove_beginning('mining', cmd)
+            cmd = remove_beginning('mine', cmd)
+            cmd = remove_beginning('min', cmd)
+            update.tents += 'm'
+            continue
+
+        elif cmd.startswith('smithing') or cmd.startswith('smith'):
+            cmd = remove_beginning('smithing', cmd)
+            cmd = remove_beginning('smith', cmd)
+            update.tents += 's'
             continue
 
         # Syntax: 'beamed :02', space, colon, and time all optional

@@ -155,7 +155,7 @@ class World:
         else:
             self.loc = Location.UNKNOWN
             self.state = WorldState.NOINFO
-        self.tents = None
+        self.tents = ''
         self.time = None # Estimated death time
         self.notes = None
         self.assigned = None
@@ -169,7 +169,7 @@ class World:
 
     def __nonzero__(self):
         return self.loc == Location.UNKNOWN and self.state == WorldState.NOINFO \
-            and self.tents == None and self.time == None and self.notes == None
+            and self.tents == '' and self.time == None and self.notes == None
 
     def mark_dead(self):
         self.state = WorldState.DEAD

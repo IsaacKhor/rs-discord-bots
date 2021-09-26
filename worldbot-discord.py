@@ -8,7 +8,7 @@ import worldbot, parser
 from wbstime import *
 from models import GUIDE_STR
 
-VERSION = '3.18.0'
+VERSION = '3.19.0'
 
 GUILD_WBS_UNITED = 261802377009561600
 
@@ -140,7 +140,7 @@ async def notify_wave():
 
         await send_to_channel(CHANNEL_NOTIFY,
             f'<@&{ROLE_WBS_NOTIFY}> wave in 15 minutes. Please join at <#{CHANNEL_WAVE_CHAT}> and <#{CHANNEL_VOICE}>\n' + 
-            f'The next wave will be at <t:{unixts}:F>, which is in <t:{unixts}:R> (dynamically updated).')
+            f'The next after will be <t:{unixts}:R> from now at <t:{unixts}:F>.')
 
 
 ### ============
