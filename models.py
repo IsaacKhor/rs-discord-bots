@@ -199,7 +199,7 @@ class World:
             ret = f'~~{self.num}~~'
 
         if self.suspicious:
-            ret += '*'
+            ret += '\*'
         return ret
 
     def update_state(self, curtime: WbsTime):
