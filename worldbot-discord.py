@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from asyncio.tasks import sleep
 import aiohttp, atexit, asyncio, os, textwrap, discord, traceback
 from datetime import datetime, timedelta, timezone
 from discord.ext import commands
@@ -8,7 +9,7 @@ import worldbot, parser
 from wbstime import *
 from models import GUIDE_STR
 
-VERSION = '3.20.0'
+VERSION = '3.20.1'
 
 GUILD_WBS_UNITED = 261802377009561600
 
@@ -109,8 +110,11 @@ async def on_voice_state_update(member, before, after):
 # Auto reset 1hr after the wave
 async def autoreset_bot():
     while not client.is_closed(): # Loop
-        _, wait_time = time_until_wave(timedelta(hours=1))
-        await asyncio.sleep(wait_time.seconds)
+        _, wait_time = time_to_next_wave()
+        sleepsecs = wait_time.seconds + 60*60
+        # Reset 1hr after wave
+        await send_to_channel(CHANNEL_BOT_LOG, f'Autoreset in {sleepsecs}')
+        await asyncio.sleep(wait_time.seconds + 60*60)
 
         bot.reset_state()
         await send_to_channel(CHANNEL_BOT_LOG, 'Auto reset triggered.')
@@ -119,13 +123,10 @@ async def autoreset_bot():
 # Notify the @Warbands role
 async def notify_wave():
     while not client.is_closed():
-        # Schedule next run to be 15 minutes before next wave
-        # We pretend like we're 20 minutes in the future because this way
-        # at wave-15, we want to schedule ourselves to wake up in 7hrs in 
-        # preperation for the wave in 7hrs 15mins, not the wave in 15mins
-        now = datetime.now().astimezone(timezone.utc) + timedelta(minutes=20)
-        _, delta = time_until_wave(timedelta(minutes=-15), now)
-        await asyncio.sleep(delta.seconds)
+        _, wait_time = time_to_next_wave()
+        sleepsecs = wait_time.seconds - 15*60
+        await send_to_channel(CHANNEL_BOT_LOG, f'Next reminder in {sleepsecs}.')
+        await asyncio.sleep(sleepsecs)
 
         # We put the actual notification after the sleep because this way,
         # the 1st time the loop is run we don't immediately notify everybody
@@ -135,12 +136,15 @@ async def notify_wave():
 
         # Also include time of wave *after* the upcoming one for ease of access
         now = datetime.now().astimezone(timezone.utc)
-        nextwave = get_next_wave_datetime(now + timedelta(minutes=60))
+        nextwave, _ = time_to_next_wave(now + timedelta(minutes=60))
         unixts = int(nextwave.timestamp())
 
         await send_to_channel(CHANNEL_NOTIFY,
             f'<@&{ROLE_WBS_NOTIFY}> wave in 15 minutes. Please join at <#{CHANNEL_WAVE_CHAT}> and <#{CHANNEL_VOICE}>\n' + 
             f'The next after will be <t:{unixts}:R> from now at <t:{unixts}:F>.')
+
+        # Wait for 20 minutes so we start the loop again *after* the wave ends
+        await asyncio.sleep(20 * 60)
 
 
 ### ============

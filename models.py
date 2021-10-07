@@ -180,7 +180,7 @@ class World:
         return WbsTime.current().time_until(self.time)
 
     def get_line_summary(self):
-        tent_str = '   ' if self.tents == None else self.tents
+        tent_str = '   ' if not self.tents else self.tents
         notes_str = '' if self.notes == None else self.notes
         timestr = '__:__' if self.time == None else str(self.get_remaining_time())
         susstr = '*' if self.suspicious else ' '

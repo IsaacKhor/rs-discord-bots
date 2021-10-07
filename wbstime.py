@@ -15,6 +15,7 @@ def get_utctime():
     return datetime.now().astimezone(timezone.utc)
 
 def get_next_wave_datetime(current):
+    """ Get next wave's datetime relative to the current time specified in args. """
     cur = current.astimezone(timezone.utc)
     day = cur.weekday()
     waves_today = WBS_TIME_DB[day]
@@ -80,3 +81,16 @@ def time_until_wave(offset, effectivenow=None):
     now = datetime.now().astimezone(timezone.utc)
     return offset_time, offset_time - now
 
+
+def time_to_next_wave(current=None):
+    """
+    Calculates `timedelta` to next wave relative to `current` datetime.
+    Wave is relative to `current`, `delta` is relative to actual current time
+    `current` must be a tz-unaware datetime in UTC
+    """
+    now = datetime.now().astimezone(timezone.utc)
+    if not current:
+        current = now
+    
+    next_wave = get_next_wave_datetime(current)
+    return next_wave, next_wave - now
