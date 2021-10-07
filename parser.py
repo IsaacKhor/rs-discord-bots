@@ -40,6 +40,19 @@ def convert_location(tok):
         return Location.DWF
     return Location.UNKNOWN
 
+def can_consume(s: str, toks*):
+    for t in toks:
+        if s.startswith(t):
+            return true
+    return false
+
+def consume(s: str, toks*):
+    for t in toks:
+        if s.startswith(t):
+            return remove_beginning(s, t)
+    return s
+    
+
 def parse_update_command(msg):
     """
     Converts a message into a world update command. If the string is not
@@ -62,22 +75,19 @@ def parse_update_command(msg):
         cmd = cmd.lstrip()
         # print(cmd)
 
-        if cmd.startswith('mg') or cmd.startswith('minigames') or cmd.startswith('sus') or cmd.startswith('*'):
-            cmd = remove_beginning('minigames', cmd)
-            cmd = remove_beginning('sus', cmd)
-            cmd = remove_beginning('mg', cmd)
-            cmd = remove_beginning('*', cmd)
+        if can_consume(cmd, 'mg', 'minigames', 'sus', '*'):
+            cmd = consume(cmd, 'mg', 'minigames', 'sus', '*')
             update.suspicious = True
             continue
 
-        elif cmd.startswith('dead'):
+        elif can_consume(cmd, 'dead'):
+            cmd = consume(cmd, 'dead')
             update.state = WorldState.DEAD
-            cmd = remove_beginning('dead', cmd)
             continue
 
         # Syntax: 'dies :05'
-        elif cmd.startswith('dies'):
-            cmd = remove_beginning('dies', cmd)
+        elif can_consume(cmd, 'dies'):
+            cmd = consume(cmd, 'dies')
             num, cmd = get_beg_number(cmd)
             if not num:
                 continue
@@ -96,14 +106,9 @@ def parse_update_command(msg):
             cmd = cmd[3:]
             continue
 
-        # Tents could be shortened to 'hcs', 'hms', etc
-        # Or they could be manually specified 'herb con mine' etc, or both
         elif is_location(cmd[0:3]):
             update.loc = convert_location(cmd[0:3])
-            cmd = remove_beginning('elm', cmd)
-            cmd = remove_beginning('rdi', cmd)
-            cmd = remove_beginning('dwf', cmd)
-            cmd = remove_beginning('unk', cmd)
+            cmd = consume(cmd, 'elm', 'rdi', 'dwf', 'unk')
             continue
 
         # Syntax: 'beamed :02', space, colon, and time all optional
