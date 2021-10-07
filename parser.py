@@ -40,13 +40,13 @@ def convert_location(tok):
         return Location.DWF
     return Location.UNKNOWN
 
-def can_consume(s: str, toks*):
+def can_consume(s: str, *toks):
     for t in toks:
         if s.startswith(t):
-            return true
-    return false
+            return True
+    return False
 
-def consume(s: str, toks*):
+def consume(s: str, *toks):
     for t in toks:
         if s.startswith(t):
             return remove_beginning(s, t)

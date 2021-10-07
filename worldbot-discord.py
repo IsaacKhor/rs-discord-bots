@@ -9,7 +9,7 @@ import worldbot, parser
 from wbstime import *
 from models import GUIDE_STR
 
-VERSION = '3.20.2'
+VERSION = '3.20.3'
 
 GUILD_WBS_UNITED = 261802377009561600
 
@@ -46,6 +46,11 @@ def get_channel(id):
 async def send_to_channel(id, msg):
     await get_channel(id).send(msg)
 
+
+async def log(msg):
+    print('[LOG]: ' + msg)
+    await send_to_channel(CHANNEL_BOT_LOG, msg)
+
 @atexit.register
 def save_state():
     bot.save_state()
@@ -57,7 +62,7 @@ async def on_ready():
     greetmsg = f'Bot starting up. Version {VERSION} loaded.'
     if DEBUG:
         greetmsg += '\n DEBUG MODE ENABLED.'
-    await send_to_channel(CHANNEL_BOT_LOG, greetmsg)
+    await log(greetmsg)
 
     # Schedule the autoreset every hour after a wave
     client.loop.create_task(autoreset_bot())
@@ -113,11 +118,11 @@ async def autoreset_bot():
         _, wait_time = time_to_next_wave()
         sleepsecs = wait_time.seconds + 60*60
         # Reset 1hr after wave
-        await send_to_channel(CHANNEL_BOT_LOG, f'Autoreset in {sleepsecs}')
+        await log(f'Autoreset in {sleepsecs}')
         await asyncio.sleep(wait_time.seconds + 60*60)
 
         bot.reset_state()
-        await send_to_channel(CHANNEL_BOT_LOG, 'Auto reset triggered.')
+        await log('Auto reset triggered.')
 
 
 # Notify the @Warbands role
@@ -125,7 +130,7 @@ async def notify_wave():
     while not client.is_closed():
         _, wait_time = time_to_next_wave()
         sleepsecs = wait_time.seconds - 15*60
-        await send_to_channel(CHANNEL_BOT_LOG, f'Next reminder in {sleepsecs}.')
+        await log(f'Next reminder in {sleepsecs}.')
         await asyncio.sleep(sleepsecs)
 
         # We put the actual notification after the sleep because this way,
@@ -439,7 +444,7 @@ async def on_err(ctx: commands.Context, err):
     if isinstance(err, commands.CommandNotFound) and ctx.channel.id == CHANNEL_BOTSPAM:
         return
     await ctx.message.add_reaction(REACT_CROSS)
-    await send_to_channel(CHANNEL_BOT_LOG, str(err))
+    await log(str(err))
 
 
 import sys
