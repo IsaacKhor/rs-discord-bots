@@ -13,11 +13,6 @@ def is_location(tok):
 def is_tents(tok):
     return len(tok) == 3 and all(c in 'mhcsf' for c in tok)
 
-def remove_beginning(item, tok):
-    if tok.startswith(item):
-        return tok[len(item):].lstrip(' :')
-    return tok
-
 def get_beg_number(s):
     num, string = match_beginning(NUM_PAT, s)
     if num:
@@ -49,7 +44,7 @@ def can_consume(s: str, *toks):
 def consume(s: str, *toks):
     for t in toks:
         if s.startswith(t):
-            return remove_beginning(s, t)
+            return s[len(t):].lstrip(' :')
     return s
     
 
@@ -70,13 +65,15 @@ def parse_update_command(msg):
 
     cmd = msg
     time_found = False
+    debug(f'Parsing: {cmd}')
     while cmd:
+        debug(f'Remaining: "{cmd}"')
         # Ignore whitespace between tokens
         cmd = cmd.lstrip()
         # print(cmd)
 
-        if can_consume(cmd, 'mg', 'minigames', 'sus', '*'):
-            cmd = consume(cmd, 'mg', 'minigames', 'sus', '*')
+        if can_consume(cmd, 'mg', 'minigames', 'mini', 'sus', '*'):
+            cmd = consume(cmd, 'mg', 'minigames', 'mini', 'sus', '*')
             update.suspicious = True
             continue
 
@@ -98,7 +95,7 @@ def parse_update_command(msg):
 
         elif cmd.startswith('beaming'):
             update.state = WorldState.BEAMING
-            cmd = remove_beginning('beaming', cmd)
+            cmd = consume(cmd, 'beaming')
             continue
 
         elif is_tents(cmd[0:3]):
@@ -113,7 +110,7 @@ def parse_update_command(msg):
 
         # Syntax: 'beamed :02', space, colon, and time all optional
         elif cmd.startswith('beamed'):
-            cmd = remove_beginning('beamed', cmd)
+            cmd = consume(cmd, 'beamed')
             num, cmd = get_beg_number(cmd)
 
             update.time = WbsTime.get_abs_minute_or_cur(num).add_mins(10)
@@ -122,9 +119,8 @@ def parse_update_command(msg):
             continue
 
         # Syntax: 'broken :02', same syntax as beamed
-        elif cmd.startswith('broke'):
-            cmd = remove_beginning('broken', cmd)
-            cmd = remove_beginning('broke', cmd)
+        elif can_consume(cmd, 'broken', 'broke'):
+            cmd = consume(cmd, 'broken', 'broke')
             num, cmd = get_beg_number(cmd)
 
             update.time = WbsTime.get_abs_minute_or_cur(num).add_mins(5)
@@ -144,9 +140,9 @@ def parse_update_command(msg):
             secs = secs if secs else 0
 
             if cmd.startswith('mins'):
-                cmd = remove_beginning('mins', cmd)
+                cmd = consume(cmd, 'mins')
             else:
-                cmd = remove_beginning('gc', cmd)
+                cmd = consume(cmd, 'gc')
                 ticks = mins*60 + secs
                 total_secs = ticks*0.6
                 mins, secs = divmod(total_secs, 60)
@@ -164,7 +160,7 @@ def parse_update_command(msg):
     return update
 
 
-async def process_message(worldbot: WorldBot, msgobj: discord.Message, debug=False):
+async def process_message(worldbot: WorldBot, msgobj: discord.Message):
     """
     The API: the parser can return:
     A string, in which case we just send it off as the response
@@ -220,8 +216,7 @@ async def process_message(worldbot: WorldBot, msgobj: discord.Message, debug=Fal
         elif cmd[0] in '0123456789':
             update = parse_update_command(msgobj.content)
             ret = worldbot.update_world(update)
-            if debug:
-                print(f'Found update command, got "{update}"')
+            debug(f'Found update command, got "{update}"')
             # Falsy return if nothing actually got updated
             return ret
 

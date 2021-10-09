@@ -1,6 +1,14 @@
 import functools
 from datetime import datetime
 from enum import Enum
+import os
+
+DEBUG = 'WORLDBOT_DEBUG' in os.environ
+
+def debug(msg):
+    if DEBUG:
+        print('[DEBUG]: ' + msg)
+
 
 class WorldState(Enum):
     NOINFO = 'uncalled'
@@ -20,6 +28,7 @@ class Location(Enum):
 
     def __str__(self):
         return self.value
+
 
 class InvalidWorldErr(Exception):
     def __init__(self, world):

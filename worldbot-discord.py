@@ -7,9 +7,9 @@ from discord.ext import commands
 
 import worldbot, parser
 from wbstime import *
-from models import GUIDE_STR
+from models import GUIDE_STR, debug, DEBUG
 
-VERSION = '3.20.3'
+VERSION = '3.20.5'
 
 GUILD_WBS_UNITED = 261802377009561600
 
@@ -37,8 +37,6 @@ bot = worldbot.WorldBot()
 msglog = open('messages.log', 'a', encoding='utf-8')
 guildobj = None
 role_textperm_obj = None
-
-DEBUG = 'WORLDBOT_DEBUG' in os.environ
 
 def get_channel(id):
     return client.get_channel(id)
@@ -86,7 +84,7 @@ async def on_voice_state_update(member, before, after):
         after.channel.id == CHANNEL_VOICE):
         # Participant joined the channel
         # Register with bot if they join within 20minutes of a wave
-        _, delta = time_until_wave(timedelta(0))
+        _, delta = time_to_next_wave()
         if delta.seconds < 20 * 60 or delta.seconds > 400 * 60:
             bot.add_participant(member.display_name)
 
@@ -146,7 +144,7 @@ async def notify_wave():
 
         await send_to_channel(CHANNEL_NOTIFY,
             f'<@&{ROLE_WBS_NOTIFY}> wave in 15 minutes. Please join at <#{CHANNEL_WAVE_CHAT}> and <#{CHANNEL_VOICE}>\n' + 
-            f'The next after will be <t:{unixts}:R> from now at <t:{unixts}:F>.')
+            f'The next after is <t:{unixts}:R> at <t:{unixts}:F>.')
 
         # Wait for 20 minutes so we start the loop again *after* the wave ends
         await asyncio.sleep(20 * 60)
@@ -161,10 +159,9 @@ async def notify_wave():
 
 @client.command(name='debug', brief='Shows debug information')
 @commands.is_owner()
-async def debug(ctx):
+async def debug_cmd(ctx):
     msg = bot.get_debug_info()
-    if DEBUG:
-        print(msg)
+    debug(msg)
     for l in textwrap.wrap(msg, width=1900):
         await ctx.send(l)
 
@@ -410,8 +407,7 @@ async def on_message(msgobj):
         return
 
     msglog.write(f'{msgobj.author.display_name}: {msgobj.content}\n')
-    if DEBUG:
-        print(f'{msgobj.author.display_name}: {msgobj.content}')
+    debug(f'{msgobj.author.display_name}: {msgobj.content}')
     
     if bot.is_ignoremode():
         if msgobj.content == '.ignoremode disable':
@@ -426,9 +422,8 @@ async def on_message(msgobj):
     # Any other truthy value, which we ignore
     # A falsy value, which then tells us to hand it off for processing by
     # the discord.py command parsing module
-    response = await parser.process_message(bot, msgobj, DEBUG)
-    if DEBUG:
-        print(f'Parser response: {response}')
+    response = await parser.process_message(bot, msgobj)
+    debug(f'Parser response: {response}')
     if response:
         if type(response) is str:
             await msgobj.channel.send(response)

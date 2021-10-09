@@ -14,7 +14,7 @@ WBS_TIME_DB = {
 def get_utctime():
     return datetime.now().astimezone(timezone.utc)
 
-def get_next_wave_datetime(current):
+def get_next_wave_datetime(current: datetime):
     """ Get next wave's datetime relative to the current time specified in args. """
     cur = current.astimezone(timezone.utc)
     day = cur.weekday()
@@ -65,21 +65,6 @@ def next_wave_info():
         {intz(n, 'Singapore')} in UTC+8
         {intz(n, 'Australia/Melbourne')} in Australia/Eastern
         """)
-
-
-# Gets the time of next wave and timedelta until that time. Must include
-# an offset. Optionally incrlude effectivenow to calculate the time of the
-# next wave based on that time instead of the actual current time.
-# Offset is the timedelta between the actual time of the next wave plus
-# that offset
-# Returns the exact time being scheduled, and the timedelta until that time
-def time_until_wave(offset, effectivenow=None):
-    if not effectivenow:
-        effectivenow = datetime.now().astimezone(timezone.utc)
-    next_wave = get_next_wave_datetime(effectivenow)
-    offset_time = next_wave + offset
-    now = datetime.now().astimezone(timezone.utc)
-    return offset_time, offset_time - now
 
 
 def time_to_next_wave(current=None):
