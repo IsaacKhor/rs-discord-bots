@@ -9,7 +9,7 @@ import worldbot, parser
 from wbstime import *
 from models import GUIDE_STR, debug, DEBUG
 
-VERSION = '3.20.5'
+VERSION = '3.20.6'
 
 GUILD_WBS_UNITED = 261802377009561600
 
@@ -144,7 +144,7 @@ async def notify_wave():
 
         await send_to_channel(CHANNEL_NOTIFY,
             f'<@&{ROLE_WBS_NOTIFY}> wave in 15 minutes. Please join at <#{CHANNEL_WAVE_CHAT}> and <#{CHANNEL_VOICE}>\n' + 
-            f'The next after is <t:{unixts}:R> at <t:{unixts}:F>.')
+            f'The following wave is <t:{unixts}:R> at <t:{unixts}:F>.')
 
         # Wait for 20 minutes so we start the loop again *after* the wave ends
         await asyncio.sleep(20 * 60)
