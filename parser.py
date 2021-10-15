@@ -201,7 +201,6 @@ async def process_message(worldbot: WorldBot, msgobj: discord.Message):
             
             em = discord.Embed(color=0xeeeeee)
             worldbot.fill_worldlist_embed(em)
-            debug(em)
             msg = await msgobj.channel.send(embed=em)
             worldbot.prevlistmsg = msg
 

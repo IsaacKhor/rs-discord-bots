@@ -8,7 +8,7 @@ import worldbot, parser
 from wbstime import *
 from models import GUIDE_STR, P2P_WORLDS, debug, DEBUG
 
-VERSION = '3.21.0'
+VERSION = '3.21.1'
 
 GUILD_WBS_UNITED = 261802377009561600
 
