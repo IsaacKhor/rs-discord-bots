@@ -196,6 +196,7 @@ async def process_message(worldbot: WorldBot, msgobj: discord.Message):
             """
             worldbot.update_world_states()
 
+            # Not reentrant but idc
             if worldbot.prevlistmsg:
                 await worldbot.prevlistmsg.delete()
             
