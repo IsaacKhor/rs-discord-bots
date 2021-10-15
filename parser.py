@@ -5,8 +5,13 @@ import discord
 from models import *
 
 NUM_PAT = re.compile(r'^(\d+)')
+RANGE_PAT = re.compile(r'^(\d+)-(\d+)')
+TOK_BOUNDS = ' :'
 
 # Parsing utils
+def advance_tok(s):
+    return s.lstrip(TOK_BOUNDS)
+
 def is_location(tok):
     return tok in ['dwf', 'elm', 'rdi', 'unk']
 
@@ -18,6 +23,15 @@ def get_beg_number(s):
     if num:
         num = int(num)
     return num, string
+
+def match_range(s):
+    m = re.match(RANGE_PAT, s)
+    if not m:
+        return None, s
+
+    lower, upper = m.groups()
+    rest = advance_tok(re.sub(RANGE_PAT, '', s))
+    return (int(lower), int(upper)), rest
 
 def match_beginning(pat, s):
     m = re.match(pat, s)
@@ -185,8 +199,10 @@ async def process_message(worldbot: WorldBot, msgobj: discord.Message):
             if worldbot.prevlistmsg:
                 await worldbot.prevlistmsg.delete()
             
-            resp = worldbot.get_current_status()
-            msg = await msgobj.channel.send(resp)
+            em = discord.Embed(color=0xeeeeee)
+            worldbot.fill_worldlist_embed(em)
+            debug(em)
+            msg = await msgobj.channel.send(embed=em)
             worldbot.prevlistmsg = msg
 
             await msgobj.delete()

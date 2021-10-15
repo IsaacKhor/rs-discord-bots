@@ -2,6 +2,8 @@ import pprint, inspect, os, json
 from wbstime import *
 from models import *
 
+import discord
+
 DEFAULT_FC = 'Wbs United'
 SAVEFILE = './worldbot-state.json'
 DEFAULT = {
@@ -92,10 +94,11 @@ class WorldBot:
             if w.loc == loc and w.is_visible() and w.state != WorldState.DEAD])
 
     # Summary output
-    def get_current_status(self):
+    def fill_worldlist_embed(self, embed: discord.Embed):
+        """ Returns a KV map for discord embeds """
         worlds = self.get_worlds()
 
-        dead_str = ','.join([str(w.num) for w in worlds if w.state == WorldState.DEAD])
+        # dead_str = ','.join([str(w.num) for w in worlds if w.state == WorldState.DEAD])
         active_dwfs = self.get_active_for_loc(Location.DWF)
         active_elms = self.get_active_for_loc(Location.ELM)
         active_rdis = self.get_active_for_loc(Location.RDI)
@@ -105,20 +108,19 @@ class WorldBot:
         all_active = sorted(all_active, key=lambda w: w.time, reverse=True)
         all_active_str = '\n'.join([w.get_line_summary() for w in all_active])
 
-
-        ret = inspect.cleandoc(f"""
-        **Active** (unknown, *beaming*, __>3 mins__, ~~<3mins~~, \*suspicious):
-        **DWF**: {active_dwfs}
-        **ELM**: {active_elms}
-        **RDI**: {active_rdis}
-        **UNK**: {active_unks}
-        **Dead**: {dead_str}
-        """)
-
+        if active_dwfs:
+            embed.add_field(name='DWF', value=active_dwfs, inline=True)
+        if active_elms:
+            embed.add_field(name='ELM', value=active_elms, inline=True)
+        if active_rdis:
+            embed.add_field(name='RDI', value=active_rdis, inline=True)
+        if active_unks:
+            embed.add_field(name='Unknown', value=active_unks, inline=True)
         if all_active_str:
-            ret += f'\n```\n{all_active_str}\n```'
+            all_active_str = f'```\n{all_active_str}\n```'
+            embed.add_field(name='Active', value=all_active_str, inline=False)
 
-        return ret
+        return embed
 
     def get_wave_summary(self):
         antistr = ', '.join(sorted(self.antilist))

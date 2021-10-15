@@ -7,7 +7,7 @@ DEBUG = 'WORLDBOT_DEBUG' in os.environ
 
 def debug(msg):
     if DEBUG:
-        print('[DEBUG]: ' + msg)
+        print('[DEBUG]: ' + str(msg))
 
 
 class WorldState(Enum):
@@ -245,26 +245,42 @@ class World:
 GUIDE_STR = ["""
 **Worldbot instructions:**
 
-**Commands**:
-- **list** - lists summary of current status
+The bot recognises two types of commands:
+- Regular commands that start with a `.`
+- World update commands
+
+For more help with regular commands, please use `.help <command>`. For example, `.help td`
+
+General commands:
 - **.help** - show more detailed help for specific commands
 - **.version** - shows the current version of the bot
 - **.wbs** - shows the time of the next wave
 
-**Wave management commands** - keep track of people
+Wave management commands:
 - **.host [user]** - set user as host. Defaults to caller
 - **.scout** - add yourself to the list of scouts
 - **.anti** - add yourself to the list of anti
 - **.reset** - reset bot for next wave. Also produces the wave summary
-- **.fc <fcname>** - sets active fc
-- **fc?** - shows current fc set by '.fc'
-- **.call <world loc>** - adds <world loc> to the call history.
-- **.take <num> [elm|rdi|dwf|unk]** - assign `num` worlds to yourself
-  For example, `.take 5 dwf` will grab 5 non-scouted dwf worlds and
-  assign them to yourself. Defaults to `unk` if location is not specified.
+- **.fc <fcname>** - sets active fc or show fc in none provided
+- **.call <string>** - adds <string> to the call history.
+- **.clear <num>** - delete the previous <num> messages
+
+Bot management commands (most only useable by bot owner):
+- **.debug** - show debug information
+- **.exit** - kill the bot
+- **.resetvotes** - resets bad/good bot votes
+- **.guide** - show this message
 """, """
-**Scouting commands** - The bot accepts any commands starting with a number
-followed by any of the following (spaces are optional for each command):
+**Scouting commands** 
+
+Use `list` to show active worlds. Use `.dead` or it's shorthad `.d` to mark worlds or a range of worlds as dead.
+
+To take worlds, use the `.take`/`.t`  or `.taked`/`.td` commands. Read the help \
+page for full info, but they assign you worlds to scout. The difference between \
+the two commands is that `td` will also mark previous worlds you scouted but \
+have not updated as dead.
+
+To update worlds, the bot accepts any commands starting with a number followed by any of the following (spaces are optional for each command):
 - **'dwf|elm|rdi|unk'** will update the world to that location, 'unk' is unknown
 - **'dead'** will mark the world as dead
 - **'dies :07'** marks the world as dying at :07
@@ -275,7 +291,10 @@ followed by any of the following (spaces are optional for each command):
 - **'xx:xx gc'** for 'xx:xx' remaining on the game clock. The seconds part is optional
 - **'xx:xx mins'** for xx:xx remaining in real time. The seconds part is optional
 - **'xx:xx'** if 'gc' or 'mins' is not specified its assumed to be gameclock
-""" , """
+
+If `mg`, `minigames`, or `*` is included in the non-notes area of an update\
+command, then it'll be marked as "suspicious" with an `*`.
+
 Examples:
 - `119dwf 10gc` marks world as dying in 10\\*0.6=6 minutes
 - `119 mhs 4:30mins` marks the world as dying in 4:30 minutes real time
@@ -289,10 +308,9 @@ Further notes:
   means `10elmhcf7` is just as valid as `10 elm hcf 7`.
 - For all time inputs the colon and seconds part is optional. For example,
   both '7' and '7:15' are both perfectly valid times, but not '715'.
-
+""", """
 **Misc**
 - There are a bunch of easter eggs if you know the old bot. Why don't you try some of them?
-""", """
 **FAQ**
 1. What do I do if I put in the wrong info? (eg `53rdi` instead of `54rdi`)
 

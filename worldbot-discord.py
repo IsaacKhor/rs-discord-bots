@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 
-from asyncio.tasks import sleep
-import aiohttp, atexit, asyncio, os, textwrap, discord, traceback
+import aiohttp, atexit, asyncio, textwrap, discord, traceback
 from datetime import datetime, timedelta, timezone
 from discord.ext import commands
 
 import worldbot, parser
 from wbstime import *
-from models import GUIDE_STR, debug, DEBUG
+from models import GUIDE_STR, P2P_WORLDS, debug, DEBUG
 
-VERSION = '3.20.6'
+VERSION = '3.21.0'
 
 GUILD_WBS_UNITED = 261802377009561600
 
@@ -20,7 +19,7 @@ CHANNEL_HELP = 842186485200584754
 CHANNEL_NOTIFY = 842527669085667408
 CHANNEL_BOTSPAM = 318793375136481280
 
-RESPONSE_CHANNELS = [CHANNEL_HELP, CHANNEL_WAVE_CHAT, CHANNEL_BOTSPAM]
+RESPONSE_CHANNELS = [CHANNEL_HELP, CHANNEL_WAVE_CHAT, CHANNEL_BOTSPAM, CHANNEL_BOT_LOG]
 
 ROLE_WBS_NOTIFY = 484721172815151114
 ROLE_HOST = 292206099833290752
@@ -194,9 +193,13 @@ async def ignoremode(ctx):
 
 @client.command(name='guide', brief='Show guide')
 @commands.is_owner()
-async def version(ctx):
-    for s in GUIDE_STR:
-        await ctx.send(s)
+async def guide(ctx: commands.Context):
+    for idx, s in enumerate(GUIDE_STR):
+        emb = discord.Embed(title='Guide', description=s)
+        emb.set_footer(text=f'Page {idx+1}/{len(GUIDE_STR)}')
+
+        await ctx.send(embed=emb)
+    await ctx.message.delete()
 
 
 @client.command(name='reset', brief='Reset bot state')
@@ -294,9 +297,25 @@ async def call(ctx, *, msg: str):
     await ctx.message.add_reaction(REACT_CHECK)
 
 
-@client.command(name='dead', brief='Mark worlds as dead')
-async def mark_dead(ctx, *worlds):
-    worlds = [int(x) for x in worlds]
+@client.command(name='dead', brief='Mark worlds as dead', aliases=['d'])
+async def mark_dead(ctx, *args):
+    """
+    Mark some worlds as dead. If the 1st argument is a range (eg '1-10')
+    then it will mark ALL worlds between those two numbers dead, inclusive
+    of the endpoints.
+    """
+    if not len(args) > 0:
+        return
+
+    # Support ranges for this command only
+    worlds = []
+    range, _ = parser.match_range(args[0])
+    if range:
+        lower, upper = range
+        worlds = [x for x in P2P_WORLDS if x >= lower and x <= upper]
+    else:
+        worlds = [int(x) for x in args]
+
     for w in worlds:
         bot.get_world(w).mark_dead()
     await ctx.message.add_reaction(REACT_CHECK)
@@ -440,6 +459,7 @@ async def on_err(ctx: commands.Context, err):
         return
     await ctx.message.add_reaction(REACT_CROSS)
     await log(str(err))
+    debug('\n'.join(traceback.format_exception(type(err), err, err.__traceback__)))
 
 
 import sys
