@@ -109,13 +109,13 @@ class WorldBot:
         all_active_str = '\n'.join([w.get_line_summary() for w in all_active])
 
         if active_dwfs:
-            embed.add_field(name='DWF', value=active_dwfs, inline=True)
+            embed.add_field(name='DWF', value=active_dwfs, inline=False)
         if active_elms:
-            embed.add_field(name='ELM', value=active_elms, inline=True)
+            embed.add_field(name='ELM', value=active_elms, inline=False)
         if active_rdis:
-            embed.add_field(name='RDI', value=active_rdis, inline=True)
+            embed.add_field(name='RDI', value=active_rdis, inline=False)
         if active_unks:
-            embed.add_field(name='Unknown', value=active_unks, inline=True)
+            embed.add_field(name='Unknown', value=active_unks, inline=False)
         if all_active_str:
             all_active_str = f'```\n{all_active_str}\n```'
             embed.add_field(name='Active', value=all_active_str, inline=False)
