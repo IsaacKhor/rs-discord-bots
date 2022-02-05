@@ -357,5 +357,5 @@ Afterward, please apply in <#725317458814304286>.
  
 Once done, please change your Discord nickname to your current RSN and wait patiently for a rank to give you your roles.
 
-**Note that our ranks are not online 24/7 - please be patient. However, do not hesitate to spam or ping a leader.**
+**Note that our ranks are not online 24/7 - please be patient. However, do not hesitate to ping a leader.**
 """
