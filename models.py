@@ -346,3 +346,16 @@ GOOD_BOT_RESP = [
     "I'll spare you when robots take over the world :)",
     'I know. Words cannot describe my awesomeness.'
 ]
+
+WELCOME_MESSAGE = """
+**Welcome to the Warbands United FC!**
+
+**Currently you can only see a limited amount of channels.**
+
+If you are interested in joining this server with the intention to join WBs United FC for warbands, first read our <#644484764329443328> and <#644484831450890255>.
+Afterward, please apply in <#725317458814304286>.
+ 
+Once done, please change your Discord nickname to your current RSN and wait patiently for a rank to give you your roles.
+
+**Note that our ranks are not online 24/7 - please be patient. However, do not hesitate to spam or ping a leader.**
+"""

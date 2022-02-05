@@ -8,7 +8,7 @@ import worldbot, parser
 from wbstime import *
 from models import GUIDE_STR, P2P_WORLDS, debug, DEBUG, WELCOME_MESSAGE
 
-VERSION = '3.23.0'
+VERSION = '3.23.1'
 
 GUILD_WBS_UNITED = 261802377009561600
 
@@ -29,9 +29,11 @@ REACT_CHECK = '✅'
 REACT_CROSS = '❌'
 
 conn = aiohttp.TCPConnector(ssl=False)
+intents = discord.Intents.default()
+intents.members = True
 
 # globals
-client = commands.Bot(connector=conn, command_prefix='.')
+client = commands.Bot(connector=conn, command_prefix='.', intents=intents)
 bot = worldbot.WorldBot()
 msglog = open('messages.log', 'a', encoding='utf-8')
 guildobj = None
@@ -485,6 +487,17 @@ async def on_err(ctx: commands.Context, err):
     await ctx.message.add_reaction(REACT_CROSS)
     await log(str(err))
     debug('\n'.join(traceback.format_exception(type(err), err, err.__traceback__)))
+
+
+# Send welcome message
+@client.listen('on_member_join')
+async def welcome_msg(mem: discord.Member):
+    dmc = mem.dm_channel
+    if not dmc:
+        dmc = await mem.create_dm()
+
+    await dmc.send(content=WELCOME_MESSAGE)
+    await log(f'Sent welcome message to: {mem.display_name}')
 
 
 import sys
