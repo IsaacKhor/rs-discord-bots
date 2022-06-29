@@ -421,29 +421,6 @@ async def on_message(msgobj):
     # discord.TextChannel means that it's a text channel in a guild, not DM
     istext = isinstance(msgobj.channel, discord.TextChannel)
 
-    # TEMPORARY FIX: friendlybot not deleting ticket open messages
-    # This is ugly but idk enough to refactor it
-    # Hopefully it's actually temporary (haha ofc it's not)
-    # id is for #applications=725317458814304286
-    # a backup of the ticket is sent to #tickets-log=725314076372107284
-    if msgobj.channel.id == 725317458814304286:
-        # non-empty messages
-        if not msgobj.content:
-            return
-
-        txt = msgobj.content.strip()
-        if txt.lower().startswith('-ticket'):
-            # Send a backup to #tickets-log
-            await send_to_channel(725314076372107284, '[NEW TICKET]' + txt)
-            # TODO: DM a copy to the person doing the sending
-            try:
-                # Delete the message after a short delay
-                await msgobj.delete(delay=10)
-            except discord.NotFound:
-                await send_to_channel(725314076372107284, 'Ticket already deleted')
-        return
-
-
     # Only respond to messages in text channels that are the bot and the help
     if istext and not (msgobj.channel.id in RESPONSE_CHANNELS):
         return
