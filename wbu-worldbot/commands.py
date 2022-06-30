@@ -23,6 +23,10 @@ def register_commands(client: commands.Bot, wbu: WbuBot):
 	async def version(ctx):
 		await ctx.send(f'Bot version v{VERSION}. Written by CraftyElk :D')
 
+	@client.command(name='instance', brief='Show instance')
+	@commands.is_owner()
+	async def version(ctx):
+		await ctx.send(f'Instance: {wbu.uuid}')
 
 	@client.command(name='ignoremode', brief='Enter ignoremode')
 	@commands.has_role(ROLE_HOST)
