@@ -137,7 +137,7 @@ class WbuBot():
 
             # Remove perm to view wave text
             # Only do when not in ignoremode so multiple bots don't conflict
-            if self.ignoremode:
+            if not self.ignoremode:
                 await member.remove_roles(self.role_textperm_obj, reason='Left voice', atomic=True)
 
             await self.send_to_channel(CHANNEL_BOT_LOG,
