@@ -204,7 +204,12 @@ async def process_message(wave: WbsWave, msgobj: discord.Message) -> Tuple[Parse
 
             # Not reentrant but idc
             if wave.prevlistmsg:
-                await wave.prevlistmsg.delete()
+                try:
+                    await wave.prevlistmsg.delete()
+                except Exception as e:
+                    # Just ignore it if the message is somehow missing
+                    # That's what we wanted anyways
+                    pass
             
             em = discord.Embed(color=0xeeeeee)
             wave.fill_worldlist_embed(em)
