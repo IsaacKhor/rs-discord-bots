@@ -5,13 +5,15 @@ from discord.ext import commands
 
 from config import *
 from models import *
+from wbubot import WbuBot
+import parser
 
-def register_commands(client: commands.Bot, bot: WbuBot):
+def register_commands(client: commands.Bot, wbu: WbuBot):
 
 	@client.command(name='debug', brief='Shows debug information')
 	@commands.is_owner()
 	async def debug_cmd(ctx):
-		msg = bot.get_debug_info()
+		msg = wbu.wave.get_debug_info()
 		debug(msg)
 		for l in textwrap.wrap(msg, width=1900):
 			await ctx.send(l)
@@ -39,7 +41,7 @@ def register_commands(client: commands.Bot, bot: WbuBot):
 
 		This command is only available to hosts.
 		"""
-		bot.ignoremode = True
+		wbu.ignoremode = True
 		await ctx.send(f'Going into ignore mode. Use `.ignoremode disable` to get out.')
 
 
@@ -55,7 +57,6 @@ def register_commands(client: commands.Bot, bot: WbuBot):
 
 
 	@client.command(name='reset', brief='Reset bot state')
-	@commands.has_role(ROLE_HOST)
 	async def reset(ctx):
 		"""
 		Resets the bot. This will reset the following:
@@ -78,8 +79,8 @@ def register_commands(client: commands.Bot, bot: WbuBot):
 
 		This command is only available to hosts.
 		"""
-		summary = bot.get_wave_summary()
-		bot.reset_state()
+		summary = wbu.wave.get_wave_summary()
+		wbu.reset_wave()
 		await ctx.send(summary)
 
 
@@ -96,7 +97,7 @@ def register_commands(client: commands.Bot, bot: WbuBot):
 		"""
 		vc = client.get_channel(CHANNEL_VOICE)
 		for m in vc.members:
-			bot.add_participant(m.display_name)
+			wbu.wave.add_participant(m.display_name)
 
 
 	@client.command(name='fc', brief='Set/list in-game fc')
@@ -108,36 +109,36 @@ def register_commands(client: commands.Bot, bot: WbuBot):
 		instead. Only available to hosts.
 		"""
 		if not fc_name:
-			await ctx.send(f"FC: '{bot.fcname}'")
+			await ctx.send(f"FC: '{wbu.wave.fcname}'")
 		else:
-			bot.fcname = fc_name
-			await ctx.send(f"Setting FC to: '{bot.fcname}'")
+			wbu.wave.fcname = fc_name
+			await ctx.send(f"Setting FC to: '{wbu.wave.fcname}'")
 
 
 	@client.command(name='host', brief='Set host')
 	async def host(ctx, host:str = ''):
 		""" Sets `host` as host. Uses caller if none specified. """
 		if host:
-			bot.host = host
-		bot.host = ctx.author.display_name
+			wbu.wave.host = host
+		wbu.wave.host = ctx.author.display_name
 		await ctx.message.add_reaction(REACT_CHECK)
 
 
 	@client.command(name='scout', brief='Add yourself to scout list')
 	async def scout(ctx):
-		bot.scoutlist.add(ctx.author.display_name)
+		wbu.wave.scoutlist.add(ctx.author.display_name)
 		await ctx.message.add_reaction(REACT_CHECK)
 
 
 	@client.command(name='anti', brief='Add yourself to anti list')
 	async def anti(ctx):
-		bot.antilist.add(ctx.author.display_name)
+		wbu.wave.antilist.add(ctx.author.display_name)
 		await ctx.message.add_reaction(REACT_CHECK)
 
 
 	@client.command(name='call', brief='Add msg to call history')
 	async def call(ctx, *, msg: str):
-		bot.worldhist.append(msg)
+		wbu.wave.worldhist.append(msg)
 		await ctx.message.add_reaction(REACT_CHECK)
 
 
@@ -161,14 +162,14 @@ def register_commands(client: commands.Bot, bot: WbuBot):
 			worlds = [int(x) for x in args]
 
 		for w in worlds:
-			bot.get_world(w).mark_dead()
+			wbu.wave.get_world(w).mark_dead()
 		await ctx.message.add_reaction(REACT_CHECK)
 
 
-	@client.command(name='wbs', brief='Show next wave information')
-	async def wbs(ctx):
-		""" Returns the time to and of next wave in several timezones. """
-		await ctx.send(next_wave_info())
+	# @client.command(name='wbs', brief='Show next wave information')
+	# async def wbs(ctx):
+	# 	""" Returns the time to and of next wave in several timezones. """
+	# 	await ctx.send(next_wave_info())
 
 
 	@client.command(name='take', brief='Assign yourself some worlds', aliases=['t'])
@@ -200,7 +201,7 @@ def register_commands(client: commands.Bot, bot: WbuBot):
 		if numworlds < 1:
 			await ctx.send(f'Invalid numworlds: {numworlds}')
 
-		ret = bot.take_worlds(
+		ret = wbu.wave.take_worlds(
 			numworlds, parser.convert_location(location), ctx.author.id)
 
 		await ctx.send(ret, reference=ctx.message, mention_author=True)
@@ -221,7 +222,7 @@ def register_commands(client: commands.Bot, bot: WbuBot):
 		may safely assume that they are dead and mark
 		the worlds as such.
 		"""
-		bot.mark_noinfo_dead_for_assignee(ctx.author.id)
+		wbu.wave.mark_noinfo_dead_for_assignee(ctx.author.id)
 		await take(ctx, numworlds, location)
 
 

@@ -1,20 +1,23 @@
 #!/usr/bin/env python3
 
 import aiohttp, discord
-from discord.ext import commands
-from wbubot import WbuBot
+import discord.ext.commands as discordbot
+import commands, wbubot
 
 def main(token: str):
     # Set up discord client
     intents = discord.Intents.default()
     intents.members = True
     conn = aiohttp.TCPConnector(ssl=False)
-    client = commands.Bot(connector=conn, command_prefix='.', intents=intents)
+    client = discordbot.Bot(connector=conn, command_prefix='.', intents=intents)
 
     msglog = open('messages.log', 'a', encoding='utf-8')
     botlog = open('bot.log', 'a', encoding='utf-8')
-    bot = WbuBot(client, msglog, botlog)
-    bot.run(token)
+
+    bot = wbubot.WbuBot(client, msglog, botlog)
+    commands.register_commands(client, bot)
+
+    client.run(token)
 
 
 if __name__ == "__main__":

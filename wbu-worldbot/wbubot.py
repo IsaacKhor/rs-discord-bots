@@ -50,9 +50,6 @@ class WbuBot():
         self.client.add_listener(self.on_err, 'on_command_error')
         self.client.add_listener(self.welcome_msg, 'on_member_join')
 
-    def run(self, token: str):
-        self.client.run(token)
-
     # Logging
     # =======
 
@@ -71,6 +68,9 @@ class WbuBot():
     async def send_to_channel(self, id: int, msg: str):
         await self.client.get_channel(id).send(msg)
 
+    def reset_wave(self):
+        self.wave = WbsWave()
+
     # Tasks
     # =====
 
@@ -82,7 +82,7 @@ class WbuBot():
             await self.logr(f'Autoreset in {sleepsecs}')
             await asyncio.sleep(wait_time.seconds + 60*60)
 
-            self.wave = WbsWave()
+            self.reset_wave()
             await self.logr('Auto reset triggered.')
 
     async def notify_wave(self):
@@ -111,12 +111,12 @@ class WbuBot():
             # Wait for 20 minutes so we start the loop again *after* the wave ends
             await asyncio.sleep(20 * 60)
 
-    async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceChannel, after: discord.VoiceChannel):
+    async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
         if self.ignoremode:
             return
 
-        now = datetime.now().astimezone(timezone.utc)
-        nowf = now.strftime('%H:%M:%S')
+        debug(f'{member}: before {before}, after {after}')
+        nowf = datetime.now().astimezone(timezone.utc).strftime('%H:%M:%S')
 
         # Somebody joined CHANNEL_VOICE
         if (before.channel == None and
