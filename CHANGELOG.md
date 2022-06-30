@@ -3,6 +3,8 @@
 v4.0.2
 
 - Fix missing message handler registration
+- Add `.instance` command
+- Fix error when using `list` but previous message does not exist
 
 v4.0.1
 

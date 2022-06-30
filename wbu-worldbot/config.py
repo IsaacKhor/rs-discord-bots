@@ -1,7 +1,7 @@
 import os
 
 DEBUG = 'WORLDBOT_DEBUG' in os.environ
-VERSION = '4.0.1'
+VERSION = '4.0.2'
 
 GUILD_WBS_UNITED = 261802377009561600
 
