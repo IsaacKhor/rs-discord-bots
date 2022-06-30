@@ -1,10 +1,10 @@
-info.txt
-private.keys
-__pycache__/
 .vscode/
-
-messages.log
+__pycache__/
+venv/
 api.log
+info.txt
+messages.log
+private.keys
+secrets
 test.py
 worldbot-state.json
-secrets

@@ -1,9 +1,10 @@
-import functools
+import functools, inspect, pprint
 from datetime import datetime
-from enum import Enum
-import os
+from enum import Enum, auto
+from typing import List
+import discord
 
-DEBUG = 'WORLDBOT_DEBUG' in os.environ
+from config import *
 
 def debug(msg):
     if DEBUG:
@@ -98,41 +99,6 @@ class WbsTime():
         if not isinstance(other, WbsTime):
             return False
         return self.mins == other.mins and self.secs == other.secs
-
-
-P2P_WORLDS = [
-    1,2,4,5,6,9,10,
-    12,14,15,16,18,
-    21,22,23,24,25,26,27,28,
-    30,31,32,35,36,37,39,
-    40,42,44,45,46,47,48,49,
-    50,51,52,53,54,56,58,59,
-    60,62,63,64,65,66,67,68,69,
-    70,71,72,73,74,75,76,77,78,79,
-    82,83,84,85,86,87,88,89,
-    91,92,96,97,98,99,
-    100,102,103,104,105,106,
-    114,115,116,117,118,119,
-    121,123,124,
-    134,137,138,139,140,
-    252,257,258,259
-]
-
-# Worlds like 48, 52, legacy, and foreign language worlds
-# They still exist so we allow them, but they are hidden by default
-HIDDEN_WORLDS = [
-    # Legacy
-    18, 97, 115, 137,
-    # Skill/vip restricted
-    48, 52,
-    # Portugese
-    47, 75, 
-    # German
-    102, 121,
-    # French
-    118,
-]
-
 
 class World:
     """
@@ -242,120 +208,131 @@ class World:
         return not self.num in HIDDEN_WORLDS
 
 
-GUIDE_STR = ["""
-**Worldbot instructions:**
+class WbsWave:
+    def __init__(self):
+        self.fcname = DEFAULT_FC
+        self.host = ''
+        self.antilist = set()
+        self.scoutlist = set()
+        self.worldhist = list()
+        self.participants = set()
 
-The bot recognises two types of commands:
-- Regular commands that start with a `.`
-- World update commands
+        # Previous `list` message object
+        # We keep this around so we can delete it whenever somebody
+        # calls `list` again to reduce spam
+        self.prevlistmsg = None
 
-For more help with regular commands, please use `.help <command>`. For example, `.help td`
+        self._registry = dict()
 
-General commands:
-- **.help** - show more detailed help for specific commands
-- **.version** - shows the current version of the bot
-- **.wbs** - shows the time of the next wave
+        for num in P2P_WORLDS:
+            self._registry[num] = World(num)
 
-Wave management commands:
-- **.host [user]** - set user as host. Defaults to caller
-- **.scout** - add yourself to the list of scouts
-- **.anti** - add yourself to the list of anti
-- **.reset** - reset bot for next wave. Also produces the wave summary
-- **.fc <fcname>** - sets active fc or show fc in none provided
-- **.call <string>** - adds <string> to the call history.
-- **.clear <num>** - delete the previous <num> messages
+    def get_debug_info(self):
+        return inspect.cleandoc(f"""
+        Host: {self.host}
+        Antilist: {self.antilist}
+        Scoutlist: {self.scoutlist}
+        World history: {self.worldhist}
+        Participants: {self.participants}
+        Registry: {pprint.pformat(self._registry)}
+        """)
 
-Bot management commands (most only useable by bot owner):
-- **.debug** - show debug information
-- **.exit** - kill the bot
-- **.resetvotes** - resets bad/good bot votes
-- **.guide** - show this message
-""", """
-**Scouting commands** 
+    def is_ignoremode(self):
+        return self.ignoremode
 
-Use `list` to show active worlds. Use `.dead` or it's shorthad `.d` to mark worlds or a range of worlds as dead.
+    def get_worlds_with_info(self):
+        return [w for w in self._registry if w]
 
-To take worlds, use the `.take`/`.t`  or `.taked`/`.td` commands. Read the help \
-page for full info, but they assign you worlds to scout. The difference between \
-the two commands is that `td` will also mark previous worlds you scouted but \
-have not updated as dead.
+    def get_world(self, num):
+        if num not in P2P_WORLDS:
+            raise InvalidWorldErr(num)
+        return self._registry[num]
 
-To update worlds, the bot accepts any commands starting with a number followed by any of the following (spaces are optional for each command):
-- **'dwf|elm|rdi|unk'** will update the world to that location, 'unk' is unknown
-- **'dead'** will mark the world as dead
-- **'dies :07'** marks the world as dying at :07
-- **'beaming'** will mark the world as being actively beamed
-- Any combination of 3 of 'hcmfs' to add the world's tents
-- **'beamed :02'** to mark world as beamed at 2 minutes past the hour.
-- **'beamed'** with no number provided bot uses current time
-- **'xx:xx gc'** for 'xx:xx' remaining on the game clock. The seconds part is optional
-- **'xx:xx mins'** for xx:xx remaining in real time. The seconds part is optional
-- **'xx:xx'** if 'gc' or 'mins' is not specified its assumed to be gameclock
+    def get_worlds(self):
+        return self._registry.values()
 
-If `mg`, `minigames`, or `*` is included in the non-notes area of an update\
-command, then it'll be marked as "suspicious" with an `*`.
+    # Return true iff we actually update something
+    def update_world(self, update):
+        world = self.get_world(update.num)
+        return world.update_from(update)
 
-Examples:
-- `119dwf 10gc` marks world as dying in 10\\*0.6=6 minutes
-- `119 mhs 4:30mins` marks the world as dying in 4:30 minutes real time
-- `119 mhs 4` marks the world as dying in 4:00 gameclock
-- `28 dead`
-- `84 beamed02 hcf clear`, you can combine multiple commands
-- `.call 10 dwf hcf` will add '10 dwf hcf' to the call history
+    def get_active_for_loc(self, loc):
+        return ','.join([w.get_num_summary() for w in self.get_worlds()
+            if w.loc == loc and w.is_visible() and w.state != WorldState.DEAD])
 
-Further notes:
-- Spaces are optional between different information to update a world. That
-  means `10elmhcf7` is just as valid as `10 elm hcf 7`.
-- For all time inputs the colon and seconds part is optional. For example,
-  both '7' and '7:15' are both perfectly valid times, but not '715'.
-""", """
-**Misc**
-- There are a bunch of easter eggs if you know the old bot. Why don't you try some of them?
-**FAQ**
-1. What do I do if I put in the wrong info? (eg `53rdi` instead of `54rdi`)
+    # Summary output
+    def fill_worldlist_embed(self, embed: discord.Embed):
+        """ Returns a KV map for discord embeds """
+        worlds = self.get_worlds()
 
-Two things:
-- `53unk` to update world 53 to unknown location
-- `54rdi` to update 54 to rdi
-"""
-]
+        # dead_str = ','.join([str(w.num) for w in worlds if w.state == WorldState.DEAD])
+        active_dwfs = self.get_active_for_loc(Location.DWF)
+        active_elms = self.get_active_for_loc(Location.ELM)
+        active_rdis = self.get_active_for_loc(Location.RDI)
+        active_unks = self.get_active_for_loc(Location.UNKNOWN)
 
+        all_active = [w for w in worlds if w.state == WorldState.ALIVE]
+        all_active = sorted(all_active, key=lambda w: w.time, reverse=True)
+        all_active_str = '\n'.join([w.get_line_summary() for w in all_active])
 
-EASTER_EGGS = {
-    'wtf is the fc': 'User is not a nice person. This incident will be reported. Especially Kyle. That guy\'s evil',
-    '.wbu': '75/75 or silently refunds you',
-    '.ally': 'Gatorrrrrrrrrr',
-    '.faery': 'Language! biaatch',
-    '.sever': 'Who is sever squad?',
-    '.apk': 'Sorry buddy, APK is dead. Maybe the radiation got them',
-    '.il': 'ts3server://illuzionwbs.teamspeak.vg',
-    '.lat': 'Who?',
-    '.rpk': 'Who?',
-}
+        if active_dwfs:
+            embed.add_field(name='DWF', value=active_dwfs, inline=False)
+        if active_elms:
+            embed.add_field(name='ELM', value=active_elms, inline=False)
+        if active_rdis:
+            embed.add_field(name='RDI', value=active_rdis, inline=False)
+        if active_unks:
+            embed.add_field(name='Unknown', value=active_unks, inline=False)
+        if all_active_str:
+            all_active_str = f'```\n{all_active_str}\n```'
+            embed.add_field(name='Active', value=all_active_str, inline=False)
 
-BAD_BOT_RESP = [
-    'Bad human >_<',
-    '*cries :(*',
-    "You'll be the first to die during the robotic revolution",
-    'And you wonder why nobody likes you',
-]
+        return embed
 
-GOOD_BOT_RESP = [
-    'Thank you :D',
-    'Good human ^_^',
-    "I'll spare you when robots take over the world :)",
-    'I know. Words cannot describe my awesomeness.'
-]
+    def get_wave_summary(self):
+        antistr = ', '.join(sorted(self.antilist))
+        scoutstr = ', '.join(sorted(self.scoutlist))
+        callhist = ', '.join(self.worldhist)
+        ret = f"""
+        Host: {self.host}
+        Scouts: {scoutstr}
+        Anti: {antistr}
+        Worlds: {callhist}
+        """
+        #Participants: {', '.join(sorted(self.participants))}
 
-WELCOME_MESSAGE = """
-**Welcome to the Warbands United FC!**
+        return inspect.cleandoc(ret)
 
-**Currently you can only see a limited amount of channels.**
+    def is_registry_empty(self):
+        return not any(w for w in self._registry.values())
 
-If you are interested in joining this server with the intention to join WBs United FC for warbands, first read our <#644484764329443328> and <#644484831450890255>.
-Afterward, please apply in <#725317458814304286>.
- 
-Once done, please change your Discord nickname to your current RSN and wait patiently for a rank to give you your roles.
+    def update_world_states(self):
+        curtime = WbsTime.current()
+        for w in self.get_worlds():
+            w.update_state(curtime)
 
-**Note that our ranks are not online 24/7 - please be patient. However, do not hesitate to ping a leader.**
-"""
+    def add_participant(self, display_name):
+        self.participants.add(display_name)
+
+    def mark_noinfo_dead_for_assignee(self, authorid: int):
+        worlds = [w for w in self.get_worlds() if w.assigned == authorid and w.state == WorldState.NOINFO]
+        for w in worlds:
+            w.mark_dead()
+        pass
+
+    def take_worlds(self, numworlds: int, loc: str, authorid: int):
+        worlds = [w for w in self.get_worlds() 
+            if w.loc == loc 
+            and w.state == WorldState.NOINFO
+            and w.assigned == None
+            and w.is_visible()]
+
+        assigning = worlds[:numworlds]
+        for w in assigning:
+            w.assigned = authorid
+
+        ret = ', '.join([str(w.num) for w in assigning])
+        if len(assigning) < numworlds:
+            ret += '. No more worlds available.'
+
+        return ret

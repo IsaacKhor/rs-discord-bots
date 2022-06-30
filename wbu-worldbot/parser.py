@@ -1,6 +1,5 @@
 import re, traceback, random
-from worldbot import WorldBot
-
+from typing import Tuple
 import discord
 from models import *
 
@@ -62,7 +61,7 @@ def consume(s: str, *toks):
     return s
     
 
-def parse_update_command(msg):
+def parse_update_command(msg: str):
     """
     Converts a message into a world update command. If the string is not
     an update command return null, otherwise return the world update object.
@@ -174,15 +173,22 @@ def parse_update_command(msg):
     return update
 
 
-async def process_message(worldbot: WorldBot, msgobj: discord.Message):
-    """
-    The API: the parser can return:
-    A string, in which case we just send it off as the response
-    A list of strings, which we send off one by one
-    Any other truthy value, which we ignore
-    A falsy value, which then tells us to hand it off for processing by
-    the discord.py command parsing module
-    """
+class ParserResp(Enum):
+    RESPOND = auto()
+    CONTINUE_TO_COMMAND = auto()
+    DISCARD = auto()
+
+    def respond(msg: str):
+        return ParserResp.RESPOND, msg
+
+    def continue_to_command():
+        return ParserResp.CONTINUE_TO_COMMAND, None
+    
+    def discard():
+        return ParserResp.DISCARD, None
+
+
+async def process_message(wave: WbsWave, msgobj: discord.Message) -> Tuple[ParserResp, str]:
     try:
         cmd = msgobj.content.strip().lower()
 
@@ -194,56 +200,43 @@ async def process_message(worldbot: WorldBot, msgobj: discord.Message):
             - Output the world state summary
             - Delete the invocation of `list` itself
             """
-            worldbot.update_world_states()
+            wave.update_world_states()
 
             # Not reentrant but idc
-            if worldbot.prevlistmsg:
-                await worldbot.prevlistmsg.delete()
+            if wave.prevlistmsg:
+                await wave.prevlistmsg.delete()
             
             em = discord.Embed(color=0xeeeeee)
-            worldbot.fill_worldlist_embed(em)
+            wave.fill_worldlist_embed(em)
             msg = await msgobj.channel.send(embed=em)
-            worldbot.prevlistmsg = msg
+            wave.prevlistmsg = msg
 
             await msgobj.delete()
-            return True
+            return ParserResp.discard()
 
         elif 'fc' in cmd and '?' in cmd:
-            return f'Using FC: "{worldbot.fcname}"'
-
-        elif 'good bot' in cmd or 'goodbot' in cmd:
-            worldbot._upvotes += 1
-            ret = random.choice(GOOD_BOT_RESP)
-            return f'{ret}\n{worldbot.get_votes_summary()}'
-
-        elif 'bad bot' in cmd or 'badbot' in cmd:
-            # reserved for drizzin XD
-            if msgobj.author.id == 493792070956220426:
-                return f'Fuck you'
-
-            worldbot._downvotes += 1
-            ret = random.choice(BAD_BOT_RESP)
-            return f'{ret}\n{worldbot.get_votes_summary()}'
+            return ParserResp.respond(f'Using FC: "{wave.fcname}"')
 
         # Implement original worldbot commands
         elif 'cpkwinsagain' in cmd:
-            return msgobj.author.display_name + ' you should STFU!'
+            return ParserResp.respond(msgobj.author.display_name + ' you should STFU!')
 
         elif cmd[0] in '0123456789':
             update = parse_update_command(msgobj.content)
-            ret = worldbot.update_world(update)
             debug(f'Found update command, got "{update}"')
-            # Falsy return if nothing actually got updated
-            return ret
+            wave.update_world(update)
+            return ParserResp.discard()
 
         else:
             for k,v in EASTER_EGGS.items():
                 if k in cmd:
-                    return v
+                    return ParserResp.respond(v)
+        
+        return ParserResp.continue_to_command()
 
     except InvalidWorldErr as e:
-        return str(e)
+        return ParserResp.respond(str(e))
 
     except Exception as e:
         traceback.print_exc()
-        return 'Error: ' + str(e) + '\n' + traceback.format_exc()
+        return ParserResp.respond(f'ERROR: {str(e)}\n{traceback.format_exc()}')
