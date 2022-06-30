@@ -18,3 +18,27 @@ v4.0.0
 - Fix bug where bot reconnection registered multiple periodic tasks
 - Remove bad/good bot feature
 - Add UUID field to bot and display it on startup
+- Remove friendlybot workaround
+
+v3.23.2
+
+- Minor welcome message change
+
+v3.23.1
+
+- Update to new discord intents API requirement
+- Add feature to send welcome messages to new members
+
+v3.23.0
+
+- Add temporary workaround to delete ticket creation messages for friendlybot
+
+v3.22.0
+- `list` embed now displays in one horizontal line per location (fields are no longer inline) 
+
+v3.21.1
+- New `.dead/.d` option: you can now specify ranges (ie `.d 1-100`)
+- `list` now return an embed
+- Final fix to minigames worlds to work with new list
+- `.clear` now works in more channels
+- `.guide` now also returns an embed
