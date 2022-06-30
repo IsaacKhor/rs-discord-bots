@@ -20,6 +20,7 @@ class WbuBot():
         self.wave = WbsWave()
         self.ignoremode = False
 
+        # Delay the rest of initialisation to first websocket connection
         client.event(self.on_ready)
 
     async def on_ready(self):
@@ -37,6 +38,10 @@ class WbuBot():
         UUID: {self.uuid}.
         {'DEBUG MODE ENABLED' if DEBUG else ''}
         """))
+
+        # Override message handler because sometimes we don't want to parse
+        # stuff as a command
+        self.client.event(self.on_message)
 
         # Create tasks for periodic features
         self.client.loop.create_task(self.autoreset_bot())
