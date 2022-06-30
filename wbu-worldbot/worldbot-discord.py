@@ -1,32 +1,14 @@
 #!/usr/bin/env python3
 
-import aiohttp, atexit, asyncio, textwrap, discord, traceback
+import aiohttp, asyncio, textwrap, discord, traceback
 from datetime import datetime, timedelta, timezone
 from discord.ext import commands
 
-import worldbot, parser
+import parser
 from wbstime import *
+from config import *
 from models import GUIDE_STR, P2P_WORLDS, debug, DEBUG, WELCOME_MESSAGE
-
-VERSION = '3.23.3'
-
-GUILD_WBS_UNITED = 261802377009561600
-
-CHANNEL_WAVE_CHAT = 803855255933681664
-CHANNEL_VOICE = 780814756713594951
-CHANNEL_BOT_LOG = 804209525585608734
-CHANNEL_HELP = 842186485200584754
-CHANNEL_NOTIFY = 842527669085667408
-CHANNEL_BOTSPAM = 318793375136481280
-
-RESPONSE_CHANNELS = [CHANNEL_HELP, CHANNEL_WAVE_CHAT, CHANNEL_BOTSPAM, CHANNEL_BOT_LOG]
-
-ROLE_WBS_NOTIFY = 484721172815151114
-ROLE_HOST = 292206099833290752
-ROLE_TEXT_PERM = 880185096055976016
-
-REACT_CHECK = '✅'
-REACT_CROSS = '❌'
+import models
 
 conn = aiohttp.TCPConnector(ssl=False)
 intents = discord.Intents.default()
@@ -34,7 +16,6 @@ intents.members = True
 
 # globals
 client = commands.Bot(connector=conn, command_prefix='.', intents=intents)
-bot = worldbot.WorldBot()
 msglog = open('messages.log', 'a', encoding='utf-8')
 guildobj = None
 role_textperm_obj = None
@@ -49,11 +30,6 @@ async def send_to_channel(id, msg):
 async def log(msg):
     print('[LOG]: ' + msg)
     await send_to_channel(CHANNEL_BOT_LOG, msg)
-
-@atexit.register
-def save_state():
-    bot.save_state()
-
 
 @client.event
 async def on_ready():

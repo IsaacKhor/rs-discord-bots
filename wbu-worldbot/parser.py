@@ -1,5 +1,5 @@
 import re, traceback, random
-from worldbot import WorldBot
+from worldbot import Wave
 
 import discord
 from models import *
@@ -174,7 +174,7 @@ def parse_update_command(msg):
     return update
 
 
-async def process_message(worldbot: WorldBot, msgobj: discord.Message):
+async def process_message(worldbot: Wave, msgobj: discord.Message):
     """
     The API: the parser can return:
     A string, in which case we just send it off as the response
