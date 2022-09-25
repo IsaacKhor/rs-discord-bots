@@ -24,9 +24,15 @@ logging.basicConfig(
     format='[%(asctime)s %(levelname)s]: %(message)s')
 
 client = discord.Client()
+initialised = False
 
 @client.event
 async def on_ready():
+    global initialised
+    if initialised:
+        logging.info(f'Bot reconnected')
+        return
+
     logging.info(f'Logged is as {client.user}')
 
     client.loop.create_task(create_specific_time_notif(
@@ -71,6 +77,8 @@ async def on_ready():
         channel=CHANNEL_NOTIFY,
         msgfn=lambda: f'<@&{ROLE_GOEBIEBANDS}> starting in 15 minutes.'
     ))
+
+    initialised = True
 
 
 @client.event
