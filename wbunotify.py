@@ -13,10 +13,6 @@ ROLE_TMS = 676760858868711436
 ROLE_YEWS = 859158679713742889
 ROLE_GOEBIEBANDS = 483236107396317195
 
-USER_AGENT = 'wbu_notify_bot (contact@unknownpriors.com or @unknownpriors#9144)'
-TMS_HEADERS = {'user-agent': USER_AGENT}
-TMS_ENDPOINT = 'https://api.weirdgloop.org/runescape/tms/current'
-TMS_TEMPLATE_ENDPOINT = 'https://runescape.wiki/api.php?format=json&action=parse&prop=text&disablelimitreport=1&text={{Travelling%20Merchant/api}}'
 
 # Set up logging
 loglv = os.environ.get('LOGLV') or 'INFO'
@@ -156,9 +152,15 @@ def get_tms_message():
     return f'<@&{ROLE_TMS}> stock today: {stock}'
 
 
+USER_AGENT = 'wbu_notify_bot (contact@unknownpriors.com or @unknownpriors#9144)'
+TMS_HEADERS = {'user-agent': USER_AGENT}
+TMS_ENDPOINT = 'https://api.weirdgloop.org/runescape/tms/current'
+TMS_TEMPLATE_ENDPOINT = 'https://runescape.wiki/api.php?format=json&action=parse&prop=text&disablelimitreport=1&text={{Travelling%20Merchant/api}}'
+
+
 def get_tms_from_template():
     r = requests.get(TMS_TEMPLATE_ENDPOINT, headers=TMS_HEADERS)
-    j = r.json().get('text').get('parse').get('*')
+    j = r.json().get('parse').get('text').get('*')
     b = BeautifulSoup(j, 'html.parser')
     spans = b.find_all('span', {'class': 'name'})
     names = [s.text for s in spans]
