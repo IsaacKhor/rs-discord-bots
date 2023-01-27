@@ -1,5 +1,11 @@
 # Worldbot
 
+v4.0.3
+
+- Add message_content intent (how did it not break until now?)
+- Add newlines to logs
+- Fix `.clear` command to updated `discord.py` message history API
+
 v4.0.2
 
 - Fix missing message handler registration

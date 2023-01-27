@@ -253,6 +253,6 @@ def register_commands(client: commands.Bot, wbu: WbuBot):
 
 		Can only be used by hosts.
 		"""
-		messages = await ctx.channel.history(limit=num+1).flatten()
+		messages = [m async for m in ctx.channel.history(limit=num+1)]
 		await ctx.channel.delete_messages(messages)
 		return
