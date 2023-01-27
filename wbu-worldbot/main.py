@@ -8,6 +8,7 @@ def main(token: str):
     # Set up discord client
     intents = discord.Intents.default()
     intents.members = True
+    intents.message_content = True
     conn = aiohttp.TCPConnector(ssl=False)
     client = discordbot.Bot(connector=conn, command_prefix='.', intents=intents)
 

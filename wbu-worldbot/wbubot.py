@@ -60,7 +60,7 @@ class WbuBot():
 
     def log(self, msg: str):
         print(f'[LOG] {msg}')
-        self.botlog.write(f'[LOG] {msg}')
+        self.botlog.write(f'[LOG] {msg}\n')
     
     async def logr(self, msg: str):
         """ Log both locally and on #worldbot-logs """
