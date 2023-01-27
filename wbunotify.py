@@ -22,7 +22,8 @@ logging.basicConfig(
     level=loglvn,
     format='[%(asctime)s %(levelname)s]: %(message)s')
 
-client = discord.Client()
+intents = discord.Intents.default()
+client = discord.Client(intents=intents)
 initialised = False
 
 @client.event
