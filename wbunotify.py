@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 import discord, requests, asyncio, os, logging
 
 CHANNEL_NOTIFY = 842527669085667408
+CHANNEL_BOT_LOG = 804209525585608734
 
 ROLE_CHAD = 856529519186673694
 
@@ -34,6 +35,7 @@ async def on_ready():
         return
 
     logging.info(f'Logged is as {client.user}')
+    # await send_to_channel(CHANNEL_NOTIFY, f'WBU Notifier connected')
 
     client.loop.create_task(create_specific_time_notif(
         name='Travelling Merchant',
