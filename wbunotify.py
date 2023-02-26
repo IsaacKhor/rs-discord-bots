@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 
+import sys
 from datetime import datetime, time, timedelta
 from bs4 import BeautifulSoup
-import discord, requests, asyncio, os, logging
+import discord
+import requests
+import asyncio
+import os
+import logging
+import viswax
 
 CHANNEL_NOTIFY = 842527669085667408
 CHANNEL_BOT_LOG = 804209525585608734
@@ -27,6 +33,7 @@ intents = discord.Intents.default()
 client = discord.Client(intents=intents)
 initialised = False
 
+
 @client.event
 async def on_ready():
     global initialised
@@ -46,9 +53,9 @@ async def on_ready():
 
     client.loop.create_task(create_specific_time_notif(
         name='Vis wax',
-        times=[time(hour=0, minute=15)],
+        times=[time(hour=0, minute=3)],
         channel=CHANNEL_NOTIFY,
-        msgfn=lambda: f'<@&{ROLE_VIS_WAX}> runes for today posted (or will be soon if the vis wax fc got delayed).'
+        msgfn=get_viswax_pred_msg
     ))
 
     client.loop.create_task(create_specific_time_notif(
@@ -101,7 +108,7 @@ def secs_until_next(target):
     occurence of that time until now. Everything is assumed to be in UTC.
     """
     # Handle everything in offset-naive times
-    assert(target.tzinfo == None)
+    assert (target.tzinfo == None)
     now = datetime.utcnow()
     if target > now.time():
         # Cant subtract two datetime.time objects
@@ -167,11 +174,15 @@ def get_tms_from_template():
     b = BeautifulSoup(j, 'html.parser')
     spans = b.find_all('span', {'class': 'name'})
     names = [s.text for s in spans]
-    stock= ', '.join(names)
+    stock = ', '.join(names)
     return f'<@&{ROLE_TMS}> stock today: {stock}'
 
 
-import sys
+def get_viswax_pred_msg() -> str:
+    msg = viswax.slot_messages()
+    return f'<@&{ROLE_VIS_WAX} predicted runes for today:\n{msg}'
+
+
 if len(sys.argv) < 2:
     print("Usage: ./wbunotify.py <token>")
 client.run(sys.argv[1])
