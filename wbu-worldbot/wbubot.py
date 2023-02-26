@@ -136,9 +136,8 @@ class WbuBot():
                 f'{nowf}: __"{member.display_name}" joined__ voice')
 
         # Somebody left CHANNEL_VOICE
-        if (before.channel and
-            before.channel.id == CHANNEL_VOICE and
-            after.channel == None):
+        if ((before.channel and before.channel.id == CHANNEL_VOICE) and
+            (after.channel == None or after.channel.id != CHANNEL_VOICE)):
 
             # Remove perm to view wave text
             # Only do when not in ignoremode so multiple bots don't conflict
