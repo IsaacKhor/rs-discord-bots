@@ -53,7 +53,7 @@ async def on_ready():
 
     client.loop.create_task(create_specific_time_notif(
         name='Vis wax',
-        times=[time(hour=0, minute=3)],
+        times=[time(hour=0, minute=2)],
         channel=CHANNEL_NOTIFY,
         msgfn=get_viswax_pred_msg
     ))

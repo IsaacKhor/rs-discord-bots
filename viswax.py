@@ -87,7 +87,7 @@ def slot_messages():
     runedate = runedate_today()
     predicted = predict(runedate)
     labeled = label_slots(predicted)
-    top5 = [sorted(x, reverse=True)[:5] for x in labeled]
-    to_str = [str_of_slot(x) for x in top5]
+    top = [sorted(x, reverse=True)[:6] for x in labeled]
+    to_str = [str_of_slot(x) for x in top]
     slot_msgs = f'Slot 1: {to_str[0]}\nSlot 2a: {to_str[1]}\nSlot 2b: {to_str[2]}\nSlot 2c: {to_str[3]}'
     return slot_msgs
