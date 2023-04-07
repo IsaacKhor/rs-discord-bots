@@ -1,0 +1,6 @@
+autopep8
+beautifulsoup4
+discord.py
+pytz
+requests
+
